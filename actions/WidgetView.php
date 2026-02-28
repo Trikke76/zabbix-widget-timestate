@@ -102,7 +102,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'selectHosts' => ['name'],
 			'hostids' => $hostids,
 			'monitored' => true,
-			'sortfield' => ['hostid', 'name'],
+			'sortfield' => ['name'],
 			'sortorder' => 'ASC',
 			'limit' => $max_rows * 5
 		];
@@ -121,6 +121,19 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		$items = API::Item()->get($params) ?: [];
+		usort($items, static function(array $a, array $b): int {
+			$host_a = isset($a['hosts'][0]['name']) ? (string) $a['hosts'][0]['name'] : '';
+			$host_b = isset($b['hosts'][0]['name']) ? (string) $b['hosts'][0]['name'] : '';
+			$host_cmp = strcasecmp($host_a, $host_b);
+			if ($host_cmp !== 0) {
+				return $host_cmp;
+			}
+
+			$name_a = (string) ($a['name'] ?? '');
+			$name_b = (string) ($b['name'] ?? '');
+			return strcasecmp($name_a, $name_b);
+		});
+
 		$result = [];
 
 		foreach ($items as $item) {
