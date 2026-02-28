@@ -17,6 +17,17 @@ State timeline widget inspired by Grafana State Timeline.
 2. Enable module in `Administration -> General -> Modules`.
 3. Add widget `Time State` on a dashboard.
 
+## Packaging
+
+- Local build (for `dev` branch testing):
+  - `./scripts/build-package.sh`
+- Output file:
+  - `dist/timestate-zabbix-v<version>.zip`
+- CI build:
+  - On every push to `main`, GitHub Actions workflow
+    [`.github/workflows/build-package.yml`](/Users/patrik/git/zabbix-widget-timestate/.github/workflows/build-package.yml)
+    builds and uploads the package as an artifact.
+
 ## Notes
 
 - State mapping accepts lines like:
