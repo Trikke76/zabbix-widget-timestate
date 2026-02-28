@@ -21,8 +21,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$max_rows = $this->clampInt((int) ($this->fields_values['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
 		$history_points = $this->clampInt((int) ($this->fields_values['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
 		$merge_equal = ((int) ($this->fields_values['merge_equal_states'] ?? 1)) === 1;
-		$null_gap_mode = (string) ($this->fields_values['null_gap_mode'] ?? 'disconnected');
-		$connect_null_gaps = ($null_gap_mode === 'connected');
+		$null_gap_mode = (int) ($this->fields_values['null_gap_mode'] ?? 0);
+		$connect_null_gaps = ($null_gap_mode === 1);
 		$state_map = $this->parseStateMap((string) ($this->fields_values['state_map'] ?? ''));
 		$base_colors = $this->buildBaseColorMap();
 		$time_to = time();

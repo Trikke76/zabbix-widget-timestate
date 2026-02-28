@@ -10,6 +10,9 @@
   "actions": {
     "widget.timestate.view": {
       "class": "WidgetView"
+    },
+    "widget.timestate.items": {
+      "class": "WidgetItems"
     }
   },
   "widget": {

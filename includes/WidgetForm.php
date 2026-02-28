@@ -44,9 +44,9 @@ class WidgetForm extends CWidgetForm {
 			)
 			->addField(
 				(new CWidgetFieldSelect('null_gap_mode', _('Null-gap mode'), [
-					'disconnected' => _('Disconnected'),
-					'connected' => _('Connected')
-				]))->setDefault('disconnected')
+					0 => _('Disconnected'),
+					1 => _('Connected')
+				]))->setDefault(0)
 			)
 			->addField(
 				(new CWidgetFieldTextBox('state_map', _('State mapping (value=Label, one per line)')))

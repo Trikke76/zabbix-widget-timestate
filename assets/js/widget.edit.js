@@ -534,6 +534,205 @@
 		field.dataset.timestatePickerInit = '1';
 	}
 
+	function ensureItemPreviewStyle() {
+		if (document.getElementById('timestate-item-preview-style')) {
+			return;
+		}
+
+		const style = document.createElement('style');
+		style.id = 'timestate-item-preview-style';
+		style.textContent = [
+			'.timestate-item-preview{margin-top:8px;padding:8px;border:1px solid #3a4655;border-radius:6px;background:#141b24;}',
+			'.timestate-item-preview-title{font-size:12px;font-weight:600;color:#d7e1ec;margin:0 0 6px 0;}',
+			'.timestate-item-preview-meta{font-size:11px;color:#9fb2c8;margin:0 0 6px 0;}',
+			'.timestate-item-preview-list{display:flex;flex-wrap:wrap;gap:6px;max-height:140px;overflow:auto;}',
+			'.timestate-item-preview-chip{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(15,23,34,.45);border:1px solid rgba(255,255,255,.1);color:#d4dee8;font-size:11px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+			'.timestate-item-preview-empty{font-size:11px;color:#9fb2c8;}'
+		].join('');
+		document.head.appendChild(style);
+	}
+
+	function findField(fieldName) {
+		return document.querySelector(
+			`input[name="fields[${fieldName}]"], input[name="${fieldName}"], select[name="fields[${fieldName}]"], select[name="${fieldName}"]`
+		);
+	}
+
+	function getHostIds() {
+		const ids = [];
+		const selectors = [
+			'input[name="fields[hostids][]"]',
+			'input[name^="fields[hostids]["]',
+			'input[name="hostids[]"]',
+			'input[name^="hostids["]',
+			'input[name*="hostids"]',
+			'#hostids input[type="hidden"]',
+			'#hostids_ms input[type="hidden"]',
+			'[id^="hostids"] input[type="hidden"]',
+			'[data-name="hostids"] input[type="hidden"]'
+		];
+
+		for (const selector of selectors) {
+			for (const input of document.querySelectorAll(selector)) {
+				const value = String(input.value || '').trim();
+				if (/^\d+$/.test(value)) {
+					ids.push(value);
+				}
+			}
+		}
+
+		return Array.from(new Set(ids));
+	}
+
+	function ensureItemPreviewBox() {
+		const keyField = findField('item_key_search');
+		const nameField = findField('item_name_search');
+		if (!keyField && !nameField) {
+			return null;
+		}
+
+		const anchor = nameField || keyField;
+		if (!anchor || !anchor.parentNode) {
+			return null;
+		}
+
+		const existing = document.getElementById('timestate-item-preview');
+		if (existing) {
+			return existing;
+		}
+
+		const box = document.createElement('div');
+		box.id = 'timestate-item-preview';
+		box.className = 'timestate-item-preview';
+		box.innerHTML = [
+			'<div class="timestate-item-preview-title">Matched items</div>',
+			'<div class="timestate-item-preview-meta">Type wildcard filters (for example: *cpu) to preview what will be selected.</div>',
+			'<div class="timestate-item-preview-list"></div>'
+		].join('');
+
+		anchor.parentNode.insertBefore(box, anchor.nextSibling);
+		return box;
+	}
+
+	function renderItemPreview(box, items, meta) {
+		if (!box) {
+			return;
+		}
+
+		const metaEl = box.querySelector('.timestate-item-preview-meta');
+		const listEl = box.querySelector('.timestate-item-preview-list');
+		if (!metaEl || !listEl) {
+			return;
+		}
+
+		listEl.innerHTML = '';
+		metaEl.textContent = meta;
+
+		if (!Array.isArray(items) || items.length === 0) {
+			const empty = document.createElement('div');
+			empty.className = 'timestate-item-preview-empty';
+			empty.textContent = 'No matching items.';
+			listEl.appendChild(empty);
+			return;
+		}
+
+		for (const item of items) {
+			const chip = document.createElement('span');
+			chip.className = 'timestate-item-preview-chip';
+			chip.textContent = String(item.label || '');
+			chip.title = chip.textContent;
+			listEl.appendChild(chip);
+		}
+	}
+
+	async function fetchItemPreview() {
+		const keyField = findField('item_key_search');
+		const nameField = findField('item_name_search');
+		const maxRowsField = findField('max_rows');
+		const box = ensureItemPreviewBox();
+
+		if (!box) {
+			return;
+		}
+
+		const hostids = getHostIds();
+		const keySearch = String(keyField?.value || '').trim();
+		const nameSearch = String(nameField?.value || '').trim();
+		const maxRows = Math.max(1, Math.min(200, Number(maxRowsField?.value || 20)));
+
+		if (hostids.length === 0) {
+			renderItemPreview(box, [], 'Select at least one host to preview items.');
+			return;
+		}
+
+		const params = new URLSearchParams({
+			action: 'widget.timestate.items',
+			hostids_csv: hostids.join(','),
+			item_key_search: keySearch,
+			item_name_search: nameSearch,
+			max_rows: String(maxRows)
+		});
+
+		try {
+			const response = await fetch(`zabbix.php?${params.toString()}`, {credentials: 'same-origin'});
+			const payload = await response.json();
+			const decoded = (payload && typeof payload.main_block === 'string')
+				? JSON.parse(payload.main_block)
+				: payload;
+			const items = Array.isArray(decoded?.items) ? decoded.items : [];
+			renderItemPreview(box, items, `Previewing ${items.length} matched item(s).`);
+		}
+		catch (_error) {
+			renderItemPreview(box, [], 'Unable to load preview right now.');
+		}
+	}
+
+	function ensureItemPreviewBinding() {
+		if (window.timestate_widget_form._itemPreviewBound) {
+			return;
+		}
+
+		ensureItemPreviewStyle();
+		ensureItemPreviewBox();
+
+		let timer = null;
+		let lastSignature = '';
+		const schedule = () => {
+			if (timer !== null) {
+				window.clearTimeout(timer);
+			}
+			timer = window.setTimeout(() => {
+				fetchItemPreview();
+			}, 250);
+		};
+
+		for (const fieldName of ['item_key_search', 'item_name_search', 'max_rows']) {
+			const field = findField(fieldName);
+			if (!field) {
+				continue;
+			}
+			field.addEventListener('input', schedule);
+			field.addEventListener('change', schedule);
+		}
+
+		const refreshForHostChanges = () => {
+			const signature = [
+				getHostIds().join(','),
+				String(findField('item_key_search')?.value || '').trim(),
+				String(findField('item_name_search')?.value || '').trim(),
+				String(findField('max_rows')?.value || '').trim()
+			].join('|');
+			if (signature !== lastSignature) {
+				lastSignature = signature;
+				schedule();
+			}
+		};
+
+		window.setInterval(refreshForHostChanges, 1000);
+		refreshForHostChanges();
+		window.timestate_widget_form._itemPreviewBound = true;
+	}
+
 	window.timestate_widget_form = {
 		init() {
 			ensureModernBulkPickerStyle();
@@ -549,6 +748,8 @@
 				}
 			});
 			observer.observe(document.body, {childList: true, subtree: true});
+
+			ensureItemPreviewBinding();
 		}
 	};
 })();
