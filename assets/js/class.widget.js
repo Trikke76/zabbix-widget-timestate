@@ -52,6 +52,7 @@ window.CWidgetTimeState = class extends CWidget {
 		const timeFrom = Number(model.time_from || 0);
 		const timeTo = Number(model.time_to || 0);
 		const range = Math.max(1, timeTo - timeFrom);
+		const ticks = this._buildTicks(timeFrom, timeTo, 8);
 
 		const legend = new Map();
 		const table = document.createElement('div');
@@ -68,6 +69,7 @@ window.CWidgetTimeState = class extends CWidget {
 
 			const lane = document.createElement('div');
 			lane.className = 'timestate__lane';
+			this._addLaneGrid(lane, ticks, timeFrom, range);
 
 			const segments = Array.isArray(row.segments) ? row.segments : [];
 			for (const seg of segments) {
@@ -104,9 +106,7 @@ window.CWidgetTimeState = class extends CWidget {
 			table.appendChild(rowEl);
 		}
 
-		const axis = document.createElement('div');
-		axis.className = 'timestate__axis';
-		axis.innerHTML = `<span>${this._fmt(timeFrom)}</span><span>${this._fmt(timeTo)}</span>`;
+		const axis = this._buildAxisTicks(ticks, timeFrom, range);
 		root.appendChild(axis);
 		root.appendChild(table);
 
@@ -123,11 +123,83 @@ window.CWidgetTimeState = class extends CWidget {
 		}
 	}
 
+	_buildTicks(timeFrom, timeTo, targetCount) {
+		const range = Math.max(1, timeTo - timeFrom);
+		const desired = range / Math.max(2, targetCount);
+		const steps = [
+			60, 120, 300, 600, 900, 1800,
+			3600, 7200, 14400, 21600, 43200,
+			86400, 172800, 604800
+		];
+
+		let step = steps[steps.length - 1];
+		for (const candidate of steps) {
+			if (candidate >= desired) {
+				step = candidate;
+				break;
+			}
+		}
+
+		const ticks = [{ts: timeFrom, edge: true}];
+		let t = Math.ceil(timeFrom / step) * step;
+		while (t < timeTo) {
+			if (t > timeFrom) {
+				ticks.push({ts: t, edge: false});
+			}
+			t += step;
+		}
+		ticks.push({ts: timeTo, edge: true});
+
+		return {items: ticks, step};
+	}
+
+	_buildAxisTicks(ticks, timeFrom, range) {
+		const axis = document.createElement('div');
+		axis.className = 'timestate__axis-detailed';
+
+		for (const tick of ticks.items) {
+			const left = ((tick.ts - timeFrom) / range) * 100;
+			const node = document.createElement('span');
+			node.className = `timestate__axis-tick${tick.edge ? ' is-edge' : ''}`;
+			node.style.left = `${Math.max(0, Math.min(100, left))}%`;
+			node.textContent = this._fmtTick(tick.ts, ticks.step);
+			node.title = this._fmt(tick.ts);
+			axis.appendChild(node);
+		}
+
+		return axis;
+	}
+
+	_addLaneGrid(lane, ticks, timeFrom, range) {
+		for (const tick of ticks.items) {
+			if (tick.edge) {
+				continue;
+			}
+			const left = ((tick.ts - timeFrom) / range) * 100;
+			const line = document.createElement('span');
+			line.className = 'timestate__lane-grid';
+			line.style.left = `${Math.max(0, Math.min(100, left))}%`;
+			lane.appendChild(line);
+		}
+	}
+
 	_fmt(ts) {
 		if (!Number.isFinite(ts) || ts <= 0) {
 			return '-';
 		}
 		return new Date(ts * 1000).toLocaleString();
+	}
+
+	_fmtTick(ts, step) {
+		const date = new Date(ts * 1000);
+		const hh = String(date.getHours()).padStart(2, '0');
+		const mm = String(date.getMinutes()).padStart(2, '0');
+		if (step < 86400) {
+			return `${hh}:${mm}`;
+		}
+		const dd = String(date.getDate()).padStart(2, '0');
+		const mo = String(date.getMonth() + 1).padStart(2, '0');
+		return `${dd}/${mo}`;
 	}
 
 	_escape(text) {

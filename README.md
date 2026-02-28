@@ -35,7 +35,5 @@ State timeline widget inspired by Grafana State Timeline.
 ## Notes
 
 - State mapping accepts lines like:
-  - `0=OK`
-  - `1=Problem`
-  - `2=Warning`
+  - `0=OK,1=Problem,2=Warning`
 - Color picker is attached to `*_color` fields in widget edit form.

@@ -49,8 +49,8 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
-				(new CWidgetFieldTextBox('state_map', _('State mapping (value=Label, one per line)')))
-					->setDefault("0=OK\n1=Problem")
+				(new CWidgetFieldTextBox('state_map', _('State mapping (value=Label, comma separated)')))
+					->setDefault('0=OK,1=Problem')
 			)
 			->addField(
 				(new CWidgetFieldTextBox('state_0_color', _('State "0" color')))

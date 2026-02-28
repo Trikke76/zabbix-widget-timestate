@@ -13,12 +13,28 @@
 	color: #d6e0ea;
 }
 
-.timestate__axis {
-	display: flex;
-	justify-content: space-between;
-	font-size: 10px;
-	color: #8fa2b5;
-	margin-bottom: 6px;
+.timestate__axis-detailed {
+	position: relative;
+	height: 16px;
+	margin-bottom: 8px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.timestate__axis-tick {
+	position: absolute;
+	top: 0;
+	transform: translateX(-50%);
+	font-size: 11px;
+	color: #9fb1c5;
+	white-space: nowrap;
+}
+
+.timestate__axis-tick.is-edge:first-child {
+	transform: translateX(0);
+}
+
+.timestate__axis-tick.is-edge:last-child {
+	transform: translateX(-100%);
 }
 
 .timestate__table {
@@ -50,6 +66,15 @@
 	background: #1f2b38;
 	overflow: hidden;
 	border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.timestate__lane-grid {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 1px;
+	background: rgba(255, 255, 255, 0.12);
+	pointer-events: none;
 }
 
 .timestate__segment {
