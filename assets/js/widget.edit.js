@@ -645,6 +645,83 @@
 		}
 	}
 
+	function parseItemsPayload(text) {
+		const parsePayload = (raw) => {
+			const payload = JSON.parse(raw);
+			if (Array.isArray(payload.items)) {
+				return payload;
+			}
+			if (payload.main_block) {
+				const nested = JSON.parse(payload.main_block);
+				if (Array.isArray(nested.items)) {
+					return nested;
+				}
+			}
+			return null;
+		};
+
+		const extractEmbeddedJson = (raw) => {
+			const marker = '{"items":';
+			const start = raw.indexOf(marker);
+			if (start === -1) {
+				return null;
+			}
+
+			let inString = false;
+			let escaped = false;
+			let depth = 0;
+			for (let i = start; i < raw.length; i++) {
+				const ch = raw[i];
+				if (escaped) {
+					escaped = false;
+					continue;
+				}
+				if (ch === '\\') {
+					escaped = true;
+					continue;
+				}
+				if (ch === '"') {
+					inString = !inString;
+					continue;
+				}
+				if (inString) {
+					continue;
+				}
+				if (ch === '{') {
+					depth++;
+				}
+				else if (ch === '}') {
+					depth--;
+					if (depth === 0) {
+						return raw.slice(start, i + 1);
+					}
+				}
+			}
+			return null;
+		};
+
+		try {
+			const parsed = parsePayload(text);
+			if (parsed !== null) {
+				return parsed;
+			}
+		}
+		catch (_error) {}
+
+		const embedded = extractEmbeddedJson(text);
+		if (embedded !== null) {
+			try {
+				const parsed = parsePayload(embedded);
+				if (parsed !== null) {
+					return parsed;
+				}
+			}
+			catch (_error) {}
+		}
+
+		return {items: []};
+	}
+
 	async function fetchItemPreview() {
 		const keyField = findField('item_key_search');
 		const nameField = findField('item_name_search');
@@ -667,6 +744,7 @@
 
 		const params = new URLSearchParams({
 			action: 'widget.timestate.items',
+			output: 'ajax',
 			hostids_csv: hostids.join(','),
 			item_key_search: keySearch,
 			item_name_search: nameSearch,
@@ -674,12 +752,13 @@
 		});
 
 		try {
-			const response = await fetch(`zabbix.php?${params.toString()}`, {credentials: 'same-origin'});
-			const payload = await response.json();
-			const decoded = (payload && typeof payload.main_block === 'string')
-				? JSON.parse(payload.main_block)
-				: payload;
-			const items = Array.isArray(decoded?.items) ? decoded.items : [];
+			const response = await fetch(`zabbix.php?${params.toString()}`, {
+				method: 'GET',
+				credentials: 'same-origin',
+				headers: {'X-Requested-With': 'XMLHttpRequest'}
+			});
+			const text = await response.text();
+			const items = parseItemsPayload(text).items || [];
 			renderItemPreview(box, items, `Previewing ${items.length} matched item(s).`);
 		}
 		catch (_error) {
