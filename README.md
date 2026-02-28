@@ -6,8 +6,12 @@ State timeline widget inspired by Grafana State Timeline.
 
 - Multiple hosts.
 - Item key/name substring filters.
+- Explicit item selection via item IDs (`comma`/`newline` separated).
 - Time range based on configurable lookback hours.
 - Segment merging for equal consecutive states.
+- Null-gap mode:
+  - `Disconnected` = show no-data gaps for missing intervals.
+  - `Connected` = extend neighboring states through missing intervals.
 - Per-state color support (`0`, `1`, unknown) with edit-form color picker.
 - Fallback deterministic colors for other state values.
 

@@ -17,28 +17,33 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
 		$item_key_search = trim((string) ($this->fields_values['item_key_search'] ?? ''));
 		$item_name_search = trim((string) ($this->fields_values['item_name_search'] ?? ''));
+		$explicit_itemids = $this->parseItemIds((string) ($this->fields_values['explicit_itemids'] ?? ''));
 		$lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$max_rows = $this->clampInt((int) ($this->fields_values['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
 		$history_points = $this->clampInt((int) ($this->fields_values['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
 		$merge_equal = ((int) ($this->fields_values['merge_equal_states'] ?? 1)) === 1;
+		$null_gap_mode = (string) ($this->fields_values['null_gap_mode'] ?? 'disconnected');
+		$connect_null_gaps = ($null_gap_mode === 'connected');
 		$state_map = $this->parseStateMap((string) ($this->fields_values['state_map'] ?? ''));
 		$base_colors = $this->buildBaseColorMap();
 		$time_to = time();
 		$time_from = $time_to - ($lookback_hours * 3600);
 
-		if ($hostids === []) {
+		if ($hostids === [] && $explicit_itemids === []) {
 			$this->setResponse(new CControllerResponseData([
 				'name' => $this->widget->getDefaultName(),
 				'rows' => [],
 				'time_from' => $time_from,
 				'time_to' => $time_to,
-				'error' => _('Select at least one host.'),
+				'error' => _('Select at least one host or provide explicit item IDs.'),
 				'user' => ['debug_mode' => $this->getDebugMode()]
 			]));
 			return;
 		}
 
-		$items = $this->loadCandidateItems($hostids, $item_key_search, $item_name_search, $max_rows);
+		$items = $explicit_itemids !== []
+			? $this->loadExplicitItems($explicit_itemids, $max_rows)
+			: $this->loadCandidateItems($hostids, $item_key_search, $item_name_search, $max_rows);
 		$rows = [];
 
 		foreach ($items as $item) {
@@ -58,7 +63,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'limit' => $history_points
 			]);
 
-			$segments = $this->buildSegments($history ?: [], $time_from, $time_to, $state_map, $base_colors, $merge_equal);
+			$segments = $this->buildSegments(
+				$history ?: [],
+				$time_from,
+				$time_to,
+				$state_map,
+				$base_colors,
+				$merge_equal,
+				$connect_null_gaps
+			);
 			if ($segments === []) {
 				continue;
 			}
@@ -79,6 +92,20 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
 		]));
+	}
+
+	private function parseItemIds(string $raw): array {
+		$normalized = str_replace([',', "\n", "\r", "\t"], ' ', $raw);
+		$tokens = preg_split('/\s+/', trim($normalized)) ?: [];
+		$ids = [];
+
+		foreach ($tokens as $token) {
+			if ($token !== '' && ctype_digit($token)) {
+				$ids[] = $token;
+			}
+		}
+
+		return array_values(array_unique($ids));
 	}
 
 	private function extractHostIds($raw): array {
@@ -148,7 +175,49 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return $result;
 	}
 
-	private function buildSegments(array $history, int $time_from, int $time_to, array $state_map, array $base_colors, bool $merge_equal): array {
+	private function loadExplicitItems(array $itemids, int $max_rows): array {
+		$items = API::Item()->get([
+			'output' => ['itemid', 'name', 'key_', 'value_type', 'hostid'],
+			'selectHosts' => ['name'],
+			'itemids' => $itemids,
+			'monitored' => true,
+			'preservekeys' => false
+		]) ?: [];
+
+		usort($items, static function(array $a, array $b): int {
+			$host_a = isset($a['hosts'][0]['name']) ? (string) $a['hosts'][0]['name'] : '';
+			$host_b = isset($b['hosts'][0]['name']) ? (string) $b['hosts'][0]['name'] : '';
+			$host_cmp = strcasecmp($host_a, $host_b);
+			if ($host_cmp !== 0) {
+				return $host_cmp;
+			}
+
+			$name_a = (string) ($a['name'] ?? '');
+			$name_b = (string) ($b['name'] ?? '');
+			return strcasecmp($name_a, $name_b);
+		});
+
+		$result = [];
+		foreach ($items as $item) {
+			$item['host_name'] = isset($item['hosts'][0]['name']) ? (string) $item['hosts'][0]['name'] : _('Host');
+			$result[] = $item;
+			if (count($result) >= $max_rows) {
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	private function buildSegments(
+		array $history,
+		int $time_from,
+		int $time_to,
+		array $state_map,
+		array $base_colors,
+		bool $merge_equal,
+		bool $connect_null_gaps
+	): array {
 		if ($history === []) {
 			return [[
 				't_from' => $time_from,
@@ -160,8 +229,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		$segments = [];
-		$last_clock = $time_from;
+		$cursor = $time_from;
 		$last_state = null;
+		$sample_interval = $this->estimateSampleInterval($history, $time_from, $time_to);
+		$max_expected_gap = max(2, (int) floor($sample_interval * 1.5));
 
 		foreach ($history as $idx => $point) {
 			$clock = (int) ($point['clock'] ?? 0);
@@ -178,20 +249,30 @@ class WidgetView extends CControllerDashboardWidgetView {
 				? (int) ($history[$idx + 1]['clock'] ?? $time_to)
 				: $time_to;
 			$next_clock = max($clock + 1, min($next_clock, $time_to));
+			$segment_end = $next_clock;
 
-			if ($clock > $last_clock) {
-				$segments[] = [
-					't_from' => $last_clock,
-					't_to' => $clock,
-					'state' => 'unknown',
-					'label' => _('No data'),
-					'color' => $base_colors['unknown']
-				];
+			if (!$connect_null_gaps && $sample_interval > 0 && ($next_clock - $clock) > $max_expected_gap) {
+				$segment_end = min($time_to, $clock + max(1, $sample_interval));
+			}
+
+			if ($clock > $cursor) {
+				if ($connect_null_gaps && $last_state !== null && !empty($segments)) {
+					$segments[count($segments) - 1]['t_to'] = $clock;
+					$last_state = $segments[count($segments) - 1];
+				} else {
+					$segments[] = [
+						't_from' => $cursor,
+						't_to' => $clock,
+						'state' => 'unknown',
+						'label' => _('No data'),
+						'color' => $base_colors['unknown']
+					];
+				}
 			}
 
 			$segment = [
 				't_from' => $clock,
-				't_to' => $next_clock,
+				't_to' => $segment_end,
 				'state' => $state,
 				'label' => $state_map[$state] ?? $state,
 				'color' => $this->resolveStateColor($state, $base_colors)
@@ -205,22 +286,57 @@ class WidgetView extends CControllerDashboardWidgetView {
 				$last_state = $segment;
 			}
 
-			$last_clock = $next_clock;
+			$cursor = $segment_end;
 		}
 
-		if ($last_clock < $time_to) {
-			$segments[] = [
-				't_from' => $last_clock,
-				't_to' => $time_to,
-				'state' => 'unknown',
-				'label' => _('No data'),
-				'color' => $base_colors['unknown']
-			];
+		if ($cursor < $time_to) {
+			if ($connect_null_gaps && $last_state !== null && !empty($segments)) {
+				$segments[count($segments) - 1]['t_to'] = $time_to;
+			} else {
+				$segments[] = [
+					't_from' => $cursor,
+					't_to' => $time_to,
+					'state' => 'unknown',
+					'label' => _('No data'),
+					'color' => $base_colors['unknown']
+				];
+			}
 		}
 
 		return array_values(array_filter($segments, static function(array $segment): bool {
 			return ($segment['t_to'] ?? 0) > ($segment['t_from'] ?? 0);
 		}));
+	}
+
+	private function estimateSampleInterval(array $history, int $time_from, int $time_to): int {
+		$clocks = [];
+		foreach ($history as $point) {
+			$clock = (int) ($point['clock'] ?? 0);
+			if ($clock >= $time_from && $clock <= $time_to) {
+				$clocks[] = $clock;
+			}
+		}
+
+		if (count($clocks) < 2) {
+			return 0;
+		}
+
+		sort($clocks);
+		$deltas = [];
+		for ($i = 1; $i < count($clocks); $i++) {
+			$delta = $clocks[$i] - $clocks[$i - 1];
+			if ($delta > 0) {
+				$deltas[] = $delta;
+			}
+		}
+
+		if ($deltas === []) {
+			return 0;
+		}
+
+		sort($deltas);
+		$mid = (int) floor(count($deltas) / 2);
+		return $deltas[$mid];
 	}
 
 	private function normalizeStateValue(string $value): string {
