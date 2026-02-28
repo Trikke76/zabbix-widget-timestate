@@ -25,10 +25,6 @@ class WidgetForm extends CWidgetForm {
 					->setDefault('')
 			)
 			->addField(
-				(new CWidgetFieldTextBox('explicit_itemids', _('Explicit item IDs (comma/newline separated)')))
-					->setDefault('')
-			)
-			->addField(
 				(new CWidgetFieldTextBox('lookback_hours', _('Lookback (hours)')))
 					->setDefault('24')
 			)

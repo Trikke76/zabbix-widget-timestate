@@ -6,7 +6,7 @@ State timeline widget inspired by Grafana State Timeline.
 
 - Multiple hosts.
 - Item key/name substring filters.
-- Explicit item selection via item IDs (`comma`/`newline` separated).
+- Matched-items preview list for wildcard filters (for example `*cpu`).
 - Time range based on configurable lookback hours.
 - Segment merging for equal consecutive states.
 - Null-gap mode:

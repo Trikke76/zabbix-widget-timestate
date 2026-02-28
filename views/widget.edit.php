@@ -9,7 +9,6 @@ $form = new CWidgetFormView($data);
 $form->addField(new CWidgetFieldMultiSelectHostView($data['fields']['hostids']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['item_key_search']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['item_name_search']));
-$form->addField(new CWidgetFieldTextBoxView($data['fields']['explicit_itemids']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['lookback_hours']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['max_rows']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['history_points']));

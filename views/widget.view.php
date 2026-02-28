@@ -6,6 +6,7 @@ declare(strict_types = 1);
 
 $payload = [
 	'rows' => $data['rows'] ?? [],
+	'selected_items' => $data['selected_items'] ?? [],
 	'time_from' => (int) ($data['time_from'] ?? time() - 3600),
 	'time_to' => (int) ($data['time_to'] ?? time()),
 	'error' => $data['error'] ?? null

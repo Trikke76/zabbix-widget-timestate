@@ -84,3 +84,35 @@
 	height: 10px;
 	border-radius: 50%;
 }
+
+.timestate__selected {
+	margin-top: 8px;
+}
+
+.timestate__selected-title {
+	font-size: 11px;
+	color: #9eb1c4;
+	margin-bottom: 6px;
+}
+
+.timestate__selected-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	max-height: 96px;
+	overflow: auto;
+}
+
+.timestate__selected-chip {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(15, 23, 34, 0.45);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	color: #d4dee8;
+	font-size: 11px;
+	max-width: 420px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

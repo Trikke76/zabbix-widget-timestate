@@ -17,7 +17,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
 		$item_key_search = trim((string) ($this->fields_values['item_key_search'] ?? ''));
 		$item_name_search = trim((string) ($this->fields_values['item_name_search'] ?? ''));
-		$explicit_itemids = $this->parseItemIds((string) ($this->fields_values['explicit_itemids'] ?? ''));
 		$lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$max_rows = $this->clampInt((int) ($this->fields_values['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
 		$history_points = $this->clampInt((int) ($this->fields_values['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
@@ -29,21 +28,20 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$time_to = time();
 		$time_from = $time_to - ($lookback_hours * 3600);
 
-		if ($hostids === [] && $explicit_itemids === []) {
+		if ($hostids === []) {
 			$this->setResponse(new CControllerResponseData([
 				'name' => $this->widget->getDefaultName(),
 				'rows' => [],
 				'time_from' => $time_from,
 				'time_to' => $time_to,
-				'error' => _('Select at least one host or provide explicit item IDs.'),
+				'selected_items' => [],
+				'error' => _('Select at least one host.'),
 				'user' => ['debug_mode' => $this->getDebugMode()]
 			]));
 			return;
 		}
 
-		$items = $explicit_itemids !== []
-			? $this->loadExplicitItems($explicit_itemids, $max_rows)
-			: $this->loadCandidateItems($hostids, $item_key_search, $item_name_search, $max_rows);
+		$items = $this->loadCandidateItems($hostids, $item_key_search, $item_name_search, $max_rows);
 		$rows = [];
 
 		foreach ($items as $item) {
@@ -87,25 +85,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$this->setResponse(new CControllerResponseData([
 			'name' => $this->widget->getDefaultName(),
 			'rows' => $rows,
+			'selected_items' => $this->buildSelectedItemPreview($items),
 			'time_from' => $time_from,
 			'time_to' => $time_to,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
 		]));
-	}
-
-	private function parseItemIds(string $raw): array {
-		$normalized = str_replace([',', "\n", "\r", "\t"], ' ', $raw);
-		$tokens = preg_split('/\s+/', trim($normalized)) ?: [];
-		$ids = [];
-
-		foreach ($tokens as $token) {
-			if ($token !== '' && ctype_digit($token)) {
-				$ids[] = $token;
-			}
-		}
-
-		return array_values(array_unique($ids));
 	}
 
 	private function extractHostIds($raw): array {
@@ -129,8 +114,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'selectHosts' => ['name'],
 			'hostids' => $hostids,
 			'monitored' => true,
-			'sortfield' => ['name'],
-			'sortorder' => 'ASC',
 			'limit' => $max_rows * 5
 		];
 
@@ -175,38 +158,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return $result;
 	}
 
-	private function loadExplicitItems(array $itemids, int $max_rows): array {
-		$items = API::Item()->get([
-			'output' => ['itemid', 'name', 'key_', 'value_type', 'hostid'],
-			'selectHosts' => ['name'],
-			'itemids' => $itemids,
-			'monitored' => true,
-			'preservekeys' => false
-		]) ?: [];
-
-		usort($items, static function(array $a, array $b): int {
-			$host_a = isset($a['hosts'][0]['name']) ? (string) $a['hosts'][0]['name'] : '';
-			$host_b = isset($b['hosts'][0]['name']) ? (string) $b['hosts'][0]['name'] : '';
-			$host_cmp = strcasecmp($host_a, $host_b);
-			if ($host_cmp !== 0) {
-				return $host_cmp;
-			}
-
-			$name_a = (string) ($a['name'] ?? '');
-			$name_b = (string) ($b['name'] ?? '');
-			return strcasecmp($name_a, $name_b);
-		});
-
-		$result = [];
+	private function buildSelectedItemPreview(array $items): array {
+		$preview = [];
 		foreach ($items as $item) {
-			$item['host_name'] = isset($item['hosts'][0]['name']) ? (string) $item['hosts'][0]['name'] : _('Host');
-			$result[] = $item;
-			if (count($result) >= $max_rows) {
-				break;
-			}
+			$host_name = (string) ($item['host_name'] ?? (isset($item['hosts'][0]['name']) ? $item['hosts'][0]['name'] : _('Host')));
+			$name = (string) ($item['name'] ?? '');
+			$key = (string) ($item['key_'] ?? '');
+			$preview[] = sprintf('%s :: %s [%s]', $host_name, $name, $key);
 		}
-
-		return $result;
+		return $preview;
 	}
 
 	private function buildSegments(

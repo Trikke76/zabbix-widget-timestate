@@ -41,11 +41,15 @@ window.CWidgetTimeState = class extends CWidget {
 		}
 
 		const rows = Array.isArray(model.rows) ? model.rows : [];
+		const selectedItems = Array.isArray(model.selected_items) ? model.selected_items : [];
 		if (rows.length === 0) {
 			const empty = document.createElement('div');
 			empty.className = 'timestate__empty';
 			empty.textContent = 'No timeline data for selected filters.';
 			root.appendChild(empty);
+			if (selectedItems.length > 0) {
+				root.appendChild(this._buildSelectedItemsPreview(selectedItems));
+			}
 			return;
 		}
 
@@ -106,6 +110,9 @@ window.CWidgetTimeState = class extends CWidget {
 		axis.innerHTML = `<span>${this._fmt(timeFrom)}</span><span>${this._fmt(timeTo)}</span>`;
 		root.appendChild(axis);
 		root.appendChild(table);
+		if (selectedItems.length > 0) {
+			root.appendChild(this._buildSelectedItemsPreview(selectedItems));
+		}
 
 		const legendEl = document.createElement('div');
 		legendEl.className = 'timestate__legend';
@@ -116,6 +123,29 @@ window.CWidgetTimeState = class extends CWidget {
 			legendEl.appendChild(item);
 		}
 		root.appendChild(legendEl);
+	}
+
+	_buildSelectedItemsPreview(items) {
+		const wrap = document.createElement('div');
+		wrap.className = 'timestate__selected';
+
+		const title = document.createElement('div');
+		title.className = 'timestate__selected-title';
+		title.textContent = `Matched items (${items.length})`;
+		wrap.appendChild(title);
+
+		const chips = document.createElement('div');
+		chips.className = 'timestate__selected-chips';
+		for (const item of items) {
+			const chip = document.createElement('span');
+			chip.className = 'timestate__selected-chip';
+			chip.textContent = String(item || '');
+			chip.title = chip.textContent;
+			chips.appendChild(chip);
+		}
+		wrap.appendChild(chips);
+
+		return wrap;
 	}
 
 	_fmt(ts) {
