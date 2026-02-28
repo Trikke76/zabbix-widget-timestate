@@ -21,33 +21,33 @@
 			'.port24-modern-picker{position:relative;display:inline-flex;align-items:center;}',
 			'.port24-modern-picker .port24-swatch-btn{width:auto;height:auto;border:0;background:transparent;padding:0;cursor:pointer;box-shadow:none;outline:none;}',
 			'.port24-modern-picker .port24-swatch-btn span{display:block;width:44px;height:22px;border-radius:6px;}',
-			'.port24-modern-picker .port24-pop{position:absolute;z-index:1200;top:36px;left:0;min-width:230px;background:#141a22;border:1px solid #2f3947;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.45);padding:10px;color:#d9e2ec;}',
-			'.port24-modern-picker .port24-pop.is-hidden{display:none;}',
-			'.port24-modern-picker .port24-tabs{display:flex;gap:6px;margin:0 0 10px 0;}',
-			'.port24-modern-picker .port24-tab{border:1px solid #344154;background:#1b2430;color:#c9d5e2;border-radius:6px;padding:4px 8px;cursor:pointer;}',
-			'.port24-modern-picker .port24-tab.is-active{background:#2e6f47;border-color:#3f8b5f;color:#fff;}',
-			'.port24-modern-picker .port24-grid{display:grid;grid-template-columns:repeat(10,18px);gap:8px;margin:0 0 10px 0;}',
-			'.port24-modern-picker .port24-dot{appearance:none;-webkit-appearance:none;display:block;width:18px;height:18px;min-width:18px;min-height:18px;box-sizing:border-box;border-radius:9999px;border:1px solid rgba(255,255,255,.22);cursor:pointer;padding:0;margin:0;line-height:0;font-size:0;}',
-			'.port24-modern-picker .port24-custom input{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:6px 8px;}',
-			'.port24-modern-picker .port24-custom-actions{margin-top:8px;display:flex;justify-content:flex-end;}',
-			'.port24-modern-picker .port24-custom-apply{border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:4px 10px;cursor:pointer;}',
-			'.port24-modern-picker .port24-custom-harmony{margin-top:10px;border-top:1px solid #2d3746;padding-top:8px;}',
-			'.port24-modern-picker .port24-custom-harmony-title{font-size:11px;color:#9fb2c8;margin:0 0 6px 0;}',
-			'.port24-modern-picker .port24-custom-wheel{margin:0 0 10px 0;padding:0 0 10px 0;border-bottom:1px solid #2d3746;}',
-			'.port24-modern-picker .port24-custom-wheel-title{font-size:11px;color:#9fb2c8;margin:0 0 6px 0;}',
-			'.port24-modern-picker .port24-wheel-wrap{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:10px;width:100%;}',
-			'.port24-modern-picker .port24-wheel{position:relative;width:96px;height:96px;min-width:96px;max-width:96px;min-height:96px;max-height:96px;flex:0 0 96px;aspect-ratio:1 / 1;border-radius:50%;border:1px solid #3a4655;background:conic-gradient(#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000);cursor:crosshair;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);}',
-			'.port24-modern-picker .port24-wheel-thumb{position:absolute;width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.55);pointer-events:none;transform:translate(-50%,-50%);}',
-			'.port24-modern-picker .port24-wheel-controls{min-width:0;width:100%;display:grid;row-gap:6px;}',
-			'.port24-modern-picker .port24-wheel-row{display:grid;grid-template-columns:20px minmax(0,1fr);align-items:center;column-gap:6px;}',
-			'.port24-modern-picker .port24-wheel-row label{font-size:11px;color:#9fb2c8;}',
-			'.port24-modern-picker .port24-wheel-row input[type="range"]{display:block;width:100%;max-width:100%;min-width:0;margin:0;box-sizing:border-box;}',
-			'.port24-modern-picker .port24-harmony-modes{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px 0;}',
-			'.port24-modern-picker .port24-harmony-mode{border:1px solid #344154;background:#1b2430;color:#c9d5e2;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;}',
-			'.port24-modern-picker .port24-harmony-mode.is-active{background:#2e6f47;border-color:#3f8b5f;color:#fff;}',
-			'.port24-modern-picker .port24-harmony-grid{display:grid;grid-template-columns:repeat(6, minmax(0,1fr));gap:6px;}',
-			'.port24-modern-picker .port24-harmony-dot{appearance:none;-webkit-appearance:none;display:block;width:100%;height:20px;min-height:20px;box-sizing:border-box;border-radius:6px;border:1px solid rgba(255,255,255,.25);cursor:pointer;padding:0;margin:0;line-height:0;font-size:0;}',
-			'.port24-modern-picker .port24-custom.is-hidden,.port24-modern-picker .port24-colors.is-hidden{display:none;}'
+			'.port24-pop{position:fixed;z-index:100050;top:0;left:0;min-width:230px;background:#141a22;border:1px solid #2f3947;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.45);padding:10px;color:#d9e2ec;}',
+			'.port24-pop.is-hidden{display:none;}',
+			'.port24-pop .port24-tabs{display:flex;gap:6px;margin:0 0 10px 0;}',
+			'.port24-pop .port24-tab{border:1px solid #344154;background:#1b2430;color:#c9d5e2;border-radius:6px;padding:4px 8px;cursor:pointer;}',
+			'.port24-pop .port24-tab.is-active{background:#2e6f47;border-color:#3f8b5f;color:#fff;}',
+			'.port24-pop .port24-grid{display:grid;grid-template-columns:repeat(10,18px);gap:8px;margin:0 0 10px 0;}',
+			'.port24-pop .port24-dot{appearance:none;-webkit-appearance:none;display:block;width:18px;height:18px;min-width:18px;min-height:18px;box-sizing:border-box;border-radius:9999px;border:1px solid rgba(255,255,255,.22);cursor:pointer;padding:0;margin:0;line-height:0;font-size:0;}',
+			'.port24-pop .port24-custom input{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:6px 8px;}',
+			'.port24-pop .port24-custom-actions{margin-top:8px;display:flex;justify-content:flex-end;}',
+			'.port24-pop .port24-custom-apply{border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:4px 10px;cursor:pointer;}',
+			'.port24-pop .port24-custom-harmony{margin-top:10px;border-top:1px solid #2d3746;padding-top:8px;}',
+			'.port24-pop .port24-custom-harmony-title{font-size:11px;color:#9fb2c8;margin:0 0 6px 0;}',
+			'.port24-pop .port24-custom-wheel{margin:0 0 10px 0;padding:0 0 10px 0;border-bottom:1px solid #2d3746;}',
+			'.port24-pop .port24-custom-wheel-title{font-size:11px;color:#9fb2c8;margin:0 0 6px 0;}',
+			'.port24-pop .port24-wheel-wrap{display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;column-gap:10px;width:100%;}',
+			'.port24-pop .port24-wheel{position:relative;width:96px;height:96px;min-width:96px;max-width:96px;min-height:96px;max-height:96px;flex:0 0 96px;aspect-ratio:1 / 1;border-radius:50%;border:1px solid #3a4655;background:conic-gradient(#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000);cursor:crosshair;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);}',
+			'.port24-pop .port24-wheel-thumb{position:absolute;width:10px;height:10px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.55);pointer-events:none;transform:translate(-50%,-50%);}',
+			'.port24-pop .port24-wheel-controls{min-width:0;width:100%;display:grid;row-gap:6px;}',
+			'.port24-pop .port24-wheel-row{display:grid;grid-template-columns:20px minmax(0,1fr);align-items:center;column-gap:6px;}',
+			'.port24-pop .port24-wheel-row label{font-size:11px;color:#9fb2c8;}',
+			'.port24-pop .port24-wheel-row input[type="range"]{display:block;width:100%;max-width:100%;min-width:0;margin:0;box-sizing:border-box;}',
+			'.port24-pop .port24-harmony-modes{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px 0;}',
+			'.port24-pop .port24-harmony-mode{border:1px solid #344154;background:#1b2430;color:#c9d5e2;border-radius:6px;padding:3px 7px;cursor:pointer;font-size:11px;}',
+			'.port24-pop .port24-harmony-mode.is-active{background:#2e6f47;border-color:#3f8b5f;color:#fff;}',
+			'.port24-pop .port24-harmony-grid{display:grid;grid-template-columns:repeat(6, minmax(0,1fr));gap:6px;}',
+			'.port24-pop .port24-harmony-dot{appearance:none;-webkit-appearance:none;display:block;width:100%;height:20px;min-height:20px;box-sizing:border-box;border-radius:6px;border:1px solid rgba(255,255,255,.25);cursor:pointer;padding:0;margin:0;line-height:0;font-size:0;}',
+			'.port24-pop .port24-custom.is-hidden,.port24-pop .port24-colors.is-hidden{display:none;}'
 		].join('');
 		document.head.appendChild(style);
 	}
@@ -184,7 +184,8 @@
 		pop.appendChild(colorsWrap);
 		pop.appendChild(customWrap);
 		root.appendChild(button);
-		root.appendChild(pop);
+		document.body.appendChild(pop);
+		pop._ownerPicker = root;
 
 		let value = normalizeHexColor(initialColor, '#D1D5DB');
 		let selectedHarmonyMode = 'analog';
@@ -382,6 +383,19 @@
 		};
 
 		let colorsBuilt = false;
+		const positionPop = () => {
+			const rect = button.getBoundingClientRect();
+			pop.style.top = `${Math.round(rect.bottom + 6)}px`;
+			pop.style.left = `${Math.round(rect.left)}px`;
+		};
+		const closePop = () => {
+			pop.classList.add('is-hidden');
+		};
+		const openPop = () => {
+			ensureColorDots();
+			positionPop();
+			pop.classList.remove('is-hidden');
+		};
 		const ensureColorDots = () => {
 			if (colorsBuilt) {
 				return;
@@ -393,7 +407,7 @@
 				dot.style.background = color;
 				dot.addEventListener('click', () => {
 					setValue(color);
-					pop.classList.add('is-hidden');
+					closePop();
 				});
 				grid.appendChild(dot);
 			}
@@ -424,7 +438,7 @@
 		});
 		customApply.addEventListener('click', () => {
 			setValue(customInput.value);
-			pop.classList.add('is-hidden');
+			closePop();
 		});
 		satRange.addEventListener('input', () => {
 			if (!currentHsl) {
@@ -470,9 +484,23 @@
 		});
 
 		button.addEventListener('click', () => {
-			ensureColorDots();
-			pop.classList.toggle('is-hidden');
+			if (pop.classList.contains('is-hidden')) {
+				openPop();
+			}
+			else {
+				closePop();
+			}
 		});
+		window.addEventListener('resize', () => {
+			if (!pop.classList.contains('is-hidden')) {
+				positionPop();
+			}
+		});
+		window.addEventListener('scroll', () => {
+			if (!pop.classList.contains('is-hidden')) {
+				positionPop();
+			}
+		}, true);
 
 		setValue(value, false);
 
@@ -491,11 +519,12 @@
 		const onPickerOutsideClick = (event) => {
 			const target = event.target instanceof Element ? event.target : null;
 			const ownerPicker = target ? target.closest('.port24-modern-picker') : null;
-			for (const pop of document.querySelectorAll('.port24-modern-picker .port24-pop')) {
+			const ownerPop = target ? target.closest('.port24-pop') : null;
+			for (const pop of document.querySelectorAll('.port24-pop')) {
 				if (pop.classList.contains('is-hidden')) {
 					continue;
 				}
-				if (ownerPicker && ownerPicker.contains(pop)) {
+				if ((ownerPicker && pop._ownerPicker === ownerPicker) || ownerPop === pop) {
 					continue;
 				}
 				pop.classList.add('is-hidden');
