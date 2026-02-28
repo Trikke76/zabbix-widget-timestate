@@ -1,0 +1,26 @@
+# Zabbix Time State Widget (7.x)
+
+State timeline widget inspired by Grafana State Timeline.
+
+## Features
+
+- Multiple hosts.
+- Item key/name substring filters.
+- Time range based on configurable lookback hours.
+- Segment merging for equal consecutive states.
+- Per-state color support (`0`, `1`, unknown) with edit-form color picker.
+- Fallback deterministic colors for other state values.
+
+## Install
+
+1. Place module directory in your Zabbix `ui/modules/` location.
+2. Enable module in `Administration -> General -> Modules`.
+3. Add widget `Time State` on a dashboard.
+
+## Notes
+
+- State mapping accepts lines like:
+  - `0=OK`
+  - `1=Problem`
+  - `2=Warning`
+- Color picker is attached to `*_color` fields in widget edit form.
