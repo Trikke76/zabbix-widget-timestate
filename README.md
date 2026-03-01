@@ -5,17 +5,25 @@ State timeline widget inspired by Grafana State Timeline.
 ## Features
 
 - Multiple hosts.
-- Item key/name substring filters.
-- Live matched-items preview in widget edit form for wildcard filters (for example `*cpu`).
-- Time range based on configurable lookback hours.
-- Segment merging for equal consecutive states.
-- Merge short segments threshold to suppress brief flapping states.
-- Null-gap mode:
+- Global row sorting:
+  - `Name (A-Z)`
+  - `Current status (Problem first)`
+  - `Last change (most recent first)`
+- Dataset-based configuration (add multiple datasets in one widget).
+- Per-dataset options:
+  - item filter mode (`Item key` or `Item name`) + filter value
+  - lookback hours
+  - max rows
+  - history points per item
+  - merge equal consecutive states
+  - merge short segments threshold (seconds)
+  - null-gap mode (`Disconnected` / `Connected`)
+  - optional backfill from first value
+  - advanced value mappings builder (type + condition + text + color)
+- Null-gap behavior:
   - `Disconnected` = show no-data gaps for missing intervals.
   - `Connected` = extend neighboring states through missing intervals.
-- Optional backfill from first value when connected gap mode is enabled.
-- Per-state color support (`0`, `1`, unknown) with edit-form color picker.
-- Fallback deterministic colors for other state values.
+- Fallback deterministic colors for unmapped state values.
 
 ## Install
 
@@ -36,10 +44,10 @@ State timeline widget inspired by Grafana State Timeline.
 
 ## Notes
 
-- Value mappings can be configured via the widget edit row builder (type + condition + text + color).
-  Backend format (for reference) supports:
+- Value mappings are configured per dataset via the edit-row builder (type + condition + text + color).
+- Backend mapping syntax (for reference) supports:
   - `value:0=OK|#2E7D32`
   - `range:80..100=High|#C62828`
   - `regex:/^ERR.*/=Error|#C62828`
   - `special:null=No data|#607D8B`
-- Color picker is attached to `*_color` fields in widget edit form.
+- Color selection is done through the integrated swatch picker in mapping rows.
