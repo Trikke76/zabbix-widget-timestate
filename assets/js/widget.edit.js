@@ -883,7 +883,7 @@
 			'.timestate-dataset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}',
 			'.timestate-dataset-filter{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px;}',
 			'.timestate-dataset-filter-input{position:relative;min-width:0;}',
-			'.timestate-dataset-suggest{position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:200000;background:#13243a;border:1px solid #355577;border-radius:6px;max-height:260px;overflow:auto;box-shadow:0 10px 24px rgba(0,0,0,.45);}',
+			'.timestate-dataset-suggest{position:fixed;left:0;top:0;z-index:2147483200;background:#13243a;border:1px solid #355577;border-radius:6px;max-height:260px;overflow:auto;box-shadow:0 10px 24px rgba(0,0,0,.45);min-width:260px;}',
 			'.timestate-dataset-suggest.is-hidden{display:none;}',
 			'.timestate-dataset-suggest-item{display:grid;grid-template-columns:minmax(0,1fr);row-gap:2px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.08);cursor:pointer;}',
 			'.timestate-dataset-suggest-item:last-child{border-bottom:0;}',
@@ -1473,6 +1473,38 @@
 		let previewSeq = 0;
 		let suggestTimer = null;
 		let suggestSeq = 0;
+		const positionSuggest = () => {
+			if (!suggestBox || suggestBox.classList.contains('is-hidden') || !filterInput) {
+				return;
+			}
+			const pad = 8;
+			const inputRect = filterInput.getBoundingClientRect();
+			const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+			const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+			const boxRect = suggestBox.getBoundingClientRect();
+
+			let left = Math.round(inputRect.left);
+			let top = Math.round(inputRect.bottom + 4);
+
+			if (top + boxRect.height + pad > vh) {
+				top = Math.round(inputRect.top - boxRect.height - 4);
+			}
+			top = Math.max(pad, Math.min(top, Math.max(pad, vh - boxRect.height - pad)));
+
+			const minWidth = Math.max(260, Math.round(inputRect.width));
+			suggestBox.style.minWidth = `${minWidth}px`;
+			if (left + minWidth + pad > vw) {
+				left = vw - minWidth - pad;
+			}
+			left = Math.max(pad, left);
+
+			suggestBox.style.left = `${left}px`;
+			suggestBox.style.top = `${top}px`;
+		};
+
+		if (suggestBox && suggestBox.parentNode !== document.body) {
+			document.body.appendChild(suggestBox);
+		}
 		const hideSuggest = () => {
 			if (!suggestBox) {
 				return;
@@ -1492,6 +1524,7 @@
 				empty.textContent = 'No matching items.';
 				suggestBox.appendChild(empty);
 				suggestBox.classList.remove('is-hidden');
+				positionSuggest();
 				return;
 			}
 
@@ -1519,12 +1552,17 @@
 				suggestBox.appendChild(row);
 			}
 			suggestBox.classList.remove('is-hidden');
+			positionSuggest();
 		};
 
 		const refreshSuggest = async () => {
 			const hostids = getHostIds();
 			if (hostids.length === 0) {
-				hideSuggest();
+				renderSuggest([], 'key');
+				const empty = suggestBox?.querySelector('.timestate-dataset-suggest-empty');
+				if (empty) {
+					empty.textContent = 'Select at least one host first.';
+				}
 				return;
 			}
 
@@ -1534,6 +1572,12 @@
 			if (filterValue.length < 1) {
 				hideSuggest();
 				return;
+			}
+
+			suggestBox?.classList.remove('is-hidden');
+			if (suggestBox) {
+				suggestBox.innerHTML = '<div class="timestate-dataset-suggest-empty">Loading...</div>';
+				positionSuggest();
 			}
 
 			const seq = ++suggestSeq;
@@ -1560,7 +1604,11 @@
 				renderSuggest(items, filterType);
 			}
 			catch (_error) {
-				hideSuggest();
+				if (suggestBox) {
+					suggestBox.innerHTML = '<div class="timestate-dataset-suggest-empty">Unable to load suggestions right now.</div>';
+					suggestBox.classList.remove('is-hidden');
+					positionSuggest();
+				}
 			}
 		};
 
@@ -1647,8 +1695,11 @@
 		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('blur', () => {
 			window.setTimeout(hideSuggest, 120);
 		});
+		window.addEventListener('resize', positionSuggest);
+		window.addEventListener('scroll', positionSuggest, true);
 		rowEl.querySelector('.timestate-dataset-maxrows')?.addEventListener('input', schedulePreview);
 		rowEl.querySelector('.timestate-dataset-remove')?.addEventListener('click', () => {
+			suggestBox?.remove();
 			rowEl.remove();
 			sync();
 		});
