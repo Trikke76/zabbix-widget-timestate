@@ -874,9 +874,7 @@
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-datasets{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
-			'.timestate-global-sidecar-row>td{padding-top:8px;border-top:1px solid #3f4a58;}',
-			'.timestate-global-sidecar{display:grid;grid-template-columns:minmax(520px,1fr) minmax(340px,1fr);column-gap:20px;align-items:stretch;}',
-			'.timestate-global-sidecar-right{border-left:1px solid #3f4a58;min-height:320px;padding:8px 12px 0 18px;box-sizing:border-box;background:rgba(20,26,34,.24);border-radius:4px;}',
+			'.timestate-global-sidecar-floating{position:absolute;top:72px;right:10px;width:min(36%,420px);min-width:320px;min-height:320px;border-left:1px solid #3f4a58;padding:10px 12px 0 18px;box-sizing:border-box;background:rgba(20,26,34,.24);border-radius:4px;pointer-events:none;}',
 			'.timestate-global-sidecar-title{font-size:13px;color:#cfd8e3;font-weight:600;margin:0 0 6px 0;}',
 			'.timestate-global-sidecar-note{font-size:12px;color:#9fb1c5;max-width:360px;line-height:1.35;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
@@ -994,7 +992,7 @@
 
 	function injectGlobalSidecar(anchorFieldName) {
 		const anchor = getFieldRow(anchorFieldName);
-		if (!anchor || !anchor.parentNode) {
+		if (!anchor) {
 			return;
 		}
 
@@ -1002,40 +1000,23 @@
 		if (existing) {
 			existing.remove();
 		}
-
-		if (anchor.tagName === 'TR') {
-			const wrapperTr = document.createElement('tr');
-			wrapperTr.id = 'timestate-global-sidecar-row';
-			wrapperTr.className = 'timestate-global-sidecar-row';
-			const wrapperTd = document.createElement('td');
-			wrapperTd.colSpan = Math.max(2, anchor.querySelectorAll(':scope > td').length || 2);
-			wrapperTd.innerHTML = [
-				'<div class="timestate-global-sidecar">',
-				'<div class="timestate-global-sidecar-left"></div>',
-				'<div class="timestate-global-sidecar-right">',
-				'<div class="timestate-global-sidecar-title">Global options</div>',
-				'<div class="timestate-global-sidecar-note">Reserved area for future global controls.</div>',
-				'</div>',
-				'</div>'
-			].join('');
-			wrapperTr.appendChild(wrapperTd);
-			anchor.parentNode.insertBefore(wrapperTr, anchor);
+		const dialog = anchor.closest('.overlay-dialogue, .overlay-dialogue.modal, .modal-dialogue, [role="dialog"]');
+		const body = dialog?.querySelector('.overlay-dialogue-body, .modal-dialogue-body, .overlay-dialogue-content');
+		if (!body) {
 			return;
 		}
+		if (window.getComputedStyle(body).position === 'static') {
+			body.style.position = 'relative';
+		}
 
-		const wrapper = document.createElement('div');
-		wrapper.id = 'timestate-global-sidecar-row';
-		wrapper.className = 'timestate-global-sidecar-row';
-		wrapper.innerHTML = [
-			'<div class="timestate-global-sidecar">',
-			'<div class="timestate-global-sidecar-left"></div>',
-			'<div class="timestate-global-sidecar-right">',
+		const panel = document.createElement('div');
+		panel.id = 'timestate-global-sidecar-row';
+		panel.className = 'timestate-global-sidecar-floating';
+		panel.innerHTML = [
 			'<div class="timestate-global-sidecar-title">Global options</div>',
-			'<div class="timestate-global-sidecar-note">Reserved area for future global controls.</div>',
-			'</div>',
-			'</div>'
+			'<div class="timestate-global-sidecar-note">Reserved area for future global controls.</div>'
 		].join('');
-		anchor.parentNode.insertBefore(wrapper, anchor);
+		body.appendChild(panel);
 	}
 
 	function hideLabelCellsByText(labels) {
