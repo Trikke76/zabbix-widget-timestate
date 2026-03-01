@@ -881,6 +881,7 @@
 			'.timestate-global-panel--left tr:first-child td{padding-top:0;}',
 			'.timestate-global-panel--left td{padding-top:6px;padding-bottom:6px;}',
 			'.timestate-global-panel--left .table-forms-td-left{width:240px;}',
+			'.timestate-global-panel--left .form-field,.timestate-global-panel--left .field-row{margin:0 0 8px 0;}',
 			'.timestate-global-panel--right{border-left:1px solid #3f4a58;min-height:320px;padding-left:18px;}',
 			'.timestate-global-sidecar-title{font-size:13px;color:#cfd8e3;font-weight:600;margin:0 0 6px 0;}',
 			'.timestate-global-sidecar-note{font-size:12px;color:#9fb1c5;max-width:360px;line-height:1.35;}',
@@ -999,7 +1000,7 @@
 
 	function layoutGlobalPanels(fieldNames, anchorFieldName) {
 		const anchor = getFieldRow(anchorFieldName);
-		if (!anchor || anchor.tagName !== 'TR' || !anchor.parentNode) {
+		if (!anchor || !anchor.parentNode) {
 			return;
 		}
 
@@ -1010,27 +1011,15 @@
 
 		const rows = fieldNames
 			.map((fieldName) => getFieldRow(fieldName))
-			.filter((row) => !!row && row.tagName === 'TR');
+			.filter((row) => !!row);
 		if (rows.length === 0) {
 			return;
 		}
 
-		const wrapperTr = document.createElement('tr');
-		wrapperTr.id = 'timestate-global-panels-row';
-		wrapperTr.className = 'timestate-global-panels-row';
-		const wrapperTd = document.createElement('td');
-		wrapperTd.colSpan = Math.max(2, anchor.querySelectorAll(':scope > td').length || 2);
-
 		const panels = document.createElement('div');
 		panels.className = 'timestate-global-panels';
-
 		const leftPanel = document.createElement('div');
 		leftPanel.className = 'timestate-global-panel timestate-global-panel--left';
-		const leftTable = document.createElement('table');
-		const leftBody = document.createElement('tbody');
-		leftTable.appendChild(leftBody);
-		leftPanel.appendChild(leftTable);
-
 		const rightPanel = document.createElement('div');
 		rightPanel.className = 'timestate-global-panel timestate-global-panel--right';
 		rightPanel.innerHTML = [
@@ -1040,12 +1029,34 @@
 
 		panels.appendChild(leftPanel);
 		panels.appendChild(rightPanel);
-		wrapperTd.appendChild(panels);
-		wrapperTr.appendChild(wrapperTd);
+		if (anchor.tagName === 'TR') {
+			const wrapperTr = document.createElement('tr');
+			wrapperTr.id = 'timestate-global-panels-row';
+			wrapperTr.className = 'timestate-global-panels-row';
+			const wrapperTd = document.createElement('td');
+			wrapperTd.colSpan = Math.max(2, anchor.querySelectorAll(':scope > td').length || 2);
+			const leftTable = document.createElement('table');
+			const leftBody = document.createElement('tbody');
+			leftTable.appendChild(leftBody);
+			leftPanel.appendChild(leftTable);
+			wrapperTd.appendChild(panels);
+			wrapperTr.appendChild(wrapperTd);
+			anchor.parentNode.insertBefore(wrapperTr, anchor);
+			rows.forEach((row) => {
+				if (row.tagName === 'TR') {
+					leftBody.appendChild(row);
+				}
+			});
+			return;
+		}
 
-		anchor.parentNode.insertBefore(wrapperTr, anchor);
+		const wrapper = document.createElement('div');
+		wrapper.id = 'timestate-global-panels-row';
+		wrapper.className = 'timestate-global-panels-row';
+		wrapper.appendChild(panels);
+		anchor.parentNode.insertBefore(wrapper, anchor);
 		rows.forEach((row) => {
-			leftBody.appendChild(row);
+			leftPanel.appendChild(row);
 		});
 	}
 
