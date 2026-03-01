@@ -43,8 +43,25 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(1)
 			)
 			->addField(
-				(new CWidgetFieldTextBox('state_map', _('State mapping (value=Label, one per line)')))
-					->setDefault("0=OK\n1=Problem")
+				(new CWidgetFieldTextBox('merge_shorter_than', _('Merge short segments (< seconds, 0 = off)')))
+					->setDefault('0')
+			)
+			->addField(
+				(new CWidgetFieldSelect('null_gap_mode', _('Null-gap mode'), [
+					0 => _('Disconnected'),
+					1 => _('Connected')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldSelect('row_sort', _('Row sorting'), [
+					0 => _('Name (A-Z)'),
+					1 => _('Current status (Problem first)'),
+					2 => _('Last change (most recent first)')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldTextBox('state_map', _('State mapping (value=Label, comma separated)')))
+					->setDefault('0=OK,1=Problem')
 			)
 			->addField(
 				(new CWidgetFieldTextBox('state_0_color', _('State "0" color')))

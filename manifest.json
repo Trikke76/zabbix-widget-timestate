@@ -4,12 +4,15 @@
   "type": "widget",
   "name": "Time State",
   "namespace": "TimeStateWidget",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "author": "Local",
   "description": "State timeline widget for Zabbix 7.x.",
   "actions": {
     "widget.timestate.view": {
       "class": "WidgetView"
+    },
+    "widget.timestate.items": {
+      "class": "WidgetItems"
     }
   },
   "widget": {
