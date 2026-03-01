@@ -16,25 +16,27 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 	protected function doAction(): void {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
-		$lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
-		$row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
+		$default_lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
+		$default_row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
 		$data_sets = $this->parseDataSets(
 			(string) ($this->fields_values['datasets_json'] ?? ''),
 			[
 				'item_key_search' => trim((string) ($this->fields_values['item_key_search'] ?? '')),
 				'item_name_search' => trim((string) ($this->fields_values['item_name_search'] ?? '')),
+				'lookback_hours' => $default_lookback_hours,
 				'max_rows' => (int) ($this->fields_values['max_rows'] ?? self::DEFAULT_MAX_ROWS),
 				'history_points' => (int) ($this->fields_values['history_points'] ?? self::DEFAULT_HISTORY_POINTS),
 				'merge_equal_states' => (int) ($this->fields_values['merge_equal_states'] ?? 1),
 				'merge_shorter_than' => (int) ($this->fields_values['merge_shorter_than'] ?? 0),
 				'null_gap_mode' => (int) ($this->fields_values['null_gap_mode'] ?? 0),
 				'null_gap_backfill_first' => (int) ($this->fields_values['null_gap_backfill_first'] ?? 0),
+				'row_sort' => $default_row_sort,
 				'state_map' => (string) ($this->fields_values['state_map'] ?? 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			]
 		);
 		$base_colors = $this->buildBaseColorMap();
 		$time_to = time();
-		$time_from = $time_to - ($lookback_hours * 3600);
+		$time_from = $time_to - ($default_lookback_hours * 3600);
 
 		if ($hostids === []) {
 			$this->setResponse(new CControllerResponseData([
@@ -52,12 +54,18 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$rows = [];
 		$seen_itemids = [];
 		$selected_items = [];
+		$global_time_from = $time_from;
 
 		foreach ($data_sets as $data_set) {
 			$filter_type = (string) ($data_set['filter_type'] ?? 'key');
 			$filter_value = (string) ($data_set['filter_value'] ?? '');
 			$item_key_search = $filter_type === 'name' ? '' : $filter_value;
 			$item_name_search = $filter_type === 'name' ? $filter_value : '';
+			$lookback_hours = (int) ($data_set['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS);
+			$dataset_time_from = $time_to - ($lookback_hours * 3600);
+			$global_time_from = min($global_time_from, $dataset_time_from);
+			$row_sort = (int) ($data_set['row_sort'] ?? self::DEFAULT_ROW_SORT);
+			$dataset_rows = [];
 
 			$items = $this->loadCandidateItems(
 				$hostids,
@@ -87,7 +95,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 					'output' => ['clock', 'value'],
 					'itemids' => [$itemid],
 					'history' => $value_type,
-					'time_from' => $time_from,
+					'time_from' => $dataset_time_from,
 					'time_till' => $time_to,
 					'sortfield' => 'clock',
 					'sortorder' => 'ASC',
@@ -96,7 +104,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 				$segments = $this->buildSegments(
 					$history ?: [],
-					$time_from,
+					$dataset_time_from,
 					$time_to,
 					$value_mappings,
 					$base_colors,
@@ -109,7 +117,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 					continue;
 				}
 
-				$rows[] = [
+				$dataset_rows[] = [
 					'row_label' => sprintf('%s :: %s', (string) $item['host_name'], (string) $item['name']),
 					'itemid' => $itemid,
 					'key_' => (string) $item['key_'],
@@ -124,8 +132,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 				];
 				$seen_itemids[$itemid] = true;
 			}
+
+			$this->sortRows($dataset_rows, $row_sort);
+			foreach ($dataset_rows as $row) {
+				$rows[] = $row;
+			}
 		}
-		$this->sortRows($rows, $row_sort);
 		foreach ($rows as &$row) {
 			unset($row['_sort_state'], $row['_sort_last_change']);
 		}
@@ -135,7 +147,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'name' => $this->widget->getDefaultName(),
 			'rows' => $rows,
 			'selected_items' => $this->buildSelectedItemPreview($selected_items),
-			'time_from' => $time_from,
+			'time_from' => $global_time_from,
 			'time_to' => $time_to,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
@@ -583,9 +595,11 @@ class WidgetView extends CControllerDashboardWidgetView {
 	}
 
 	private function normalizeDataSet(array $entry): array {
+		$lookback_hours = $this->clampInt((int) ($entry['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$max_rows = $this->clampInt((int) ($entry['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
 		$history_points = $this->clampInt((int) ($entry['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
 		$merge_shorter_than = $this->clampInt((int) ($entry['merge_shorter_than'] ?? 0), 0, 3600);
+		$row_sort = $this->clampInt((int) ($entry['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
 		$state_map_raw = trim((string) ($entry['state_map'] ?? ''));
 		if ($state_map_raw === '') {
 			$state_map_raw = 'value:0=OK|#2E7D32,value:1=Problem|#C62828';
@@ -605,12 +619,14 @@ class WidgetView extends CControllerDashboardWidgetView {
 				?? $entry['item_name_search']
 				?? ''
 			)),
+			'lookback_hours' => $lookback_hours,
 			'max_rows' => $max_rows,
 			'history_points' => $history_points,
 			'merge_equal_states' => ((int) ($entry['merge_equal_states'] ?? 1)) === 1 ? 1 : 0,
 			'merge_shorter_than' => $merge_shorter_than,
 			'null_gap_mode' => ((int) ($entry['null_gap_mode'] ?? 0)) === 1 ? 1 : 0,
 			'null_gap_backfill_first' => ((int) ($entry['null_gap_backfill_first'] ?? 0)) === 1 ? 1 : 0,
+			'row_sort' => $row_sort,
 			'rules' => $rules !== [] ? $rules : $this->parseValueMappings('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 		];
 	}

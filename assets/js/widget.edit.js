@@ -861,6 +861,7 @@
 			'.timestate-dataset-name{font-size:12px;font-weight:600;color:#d7e1ec;}',
 			'.timestate-dataset-grid{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) minmax(120px,.6fr) minmax(120px,.6fr);gap:8px;}',
 			'.timestate-dataset-filter{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px;}',
+			'.timestate-dataset-grid > .is-full{grid-column:1 / -1;}',
 			'.timestate-dataset-field{display:flex;flex-direction:column;gap:4px;min-width:0;}',
 			'.timestate-dataset-field > span{font-size:11px;color:#9fb2c8;}',
 			'.timestate-dataset-field.is-full{grid-column:1 / -1;}',
@@ -880,6 +881,9 @@
 			'.timestate-map-cond-range{display:grid;grid-template-columns:1fr 1fr;gap:6px;}',
 			'.timestate-map-remove{width:28px;height:28px;border:1px solid #4b5a6d;background:#1a2431;color:#e7eef7;border-radius:6px;cursor:pointer;}',
 			'.timestate-map-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}',
+			'.timestate-map-builder--dataset{margin-top:0;padding:8px;}',
+			'.timestate-map-builder--dataset .timestate-map-builder-title{margin-bottom:6px;}',
+			'.timestate-map-builder--dataset .timestate-map-builder-help{margin-bottom:6px;}',
 			'@media (max-width: 1360px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
 			'@media (max-width: 980px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
@@ -1014,11 +1018,13 @@
 						|| ''
 					),
 					max_rows: String(entry.max_rows || '20'),
+					lookback_hours: String(entry.lookback_hours || '24'),
 					history_points: String(entry.history_points || '500'),
 					merge_equal_states: String(entry.merge_equal_states ?? '1'),
 					merge_shorter_than: String(entry.merge_shorter_than || '0'),
 					null_gap_mode: String(entry.null_gap_mode ?? '0'),
 					null_gap_backfill_first: String(entry.null_gap_backfill_first ?? '0'),
+					row_sort: String(entry.row_sort ?? '0'),
 					state_map: String(entry.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 				}));
 		}
@@ -1034,11 +1040,13 @@
 			const filter_type = String(set.filter_type || 'key') === 'name' ? 'name' : 'key';
 			const filter_value = String(set.filter_value || '').trim();
 			const max_rows = String(set.max_rows || '').trim();
+			const lookback_hours = String(set.lookback_hours || '').trim();
 			const history_points = String(set.history_points || '').trim();
 			const merge_equal_states = String(set.merge_equal_states ?? '1').trim();
 			const merge_shorter_than = String(set.merge_shorter_than || '').trim();
 			const null_gap_mode = String(set.null_gap_mode ?? '0').trim();
 			const null_gap_backfill_first = String(set.null_gap_backfill_first ?? '0').trim();
+			const row_sort = String(set.row_sort ?? '0').trim();
 			const state_map = String(set.state_map || '').trim();
 			if (state_map === '') {
 				continue;
@@ -1048,11 +1056,13 @@
 				filter_type,
 				filter_value,
 				max_rows,
+				lookback_hours,
 				history_points,
 				merge_equal_states,
 				merge_shorter_than,
 				null_gap_mode,
 				null_gap_backfill_first,
+				row_sort,
 				state_map
 			});
 		}
@@ -1253,11 +1263,13 @@
 				filter_type: String(rowEl.querySelector('.timestate-dataset-filtertype')?.value || 'key'),
 				filter_value: String(rowEl.querySelector('.timestate-dataset-filtervalue')?.value || ''),
 				max_rows: String(rowEl.querySelector('.timestate-dataset-maxrows')?.value || '20'),
+				lookback_hours: String(rowEl.querySelector('.timestate-dataset-lookback')?.value || '24'),
 				history_points: String(rowEl.querySelector('.timestate-dataset-history')?.value || '500'),
 				merge_equal_states: String(rowEl.querySelector('.timestate-dataset-mergeequal')?.value || '1'),
 				merge_shorter_than: String(rowEl.querySelector('.timestate-dataset-mergeshort')?.value || '0'),
 				null_gap_mode: String(rowEl.querySelector('.timestate-dataset-nullgap')?.value || '0'),
 				null_gap_backfill_first: String(rowEl.querySelector('.timestate-dataset-backfill')?.value || '0'),
+				row_sort: String(rowEl.querySelector('.timestate-dataset-rowsort')?.value || '0'),
 				state_map: String(rowEl.querySelector('.timestate-dataset-map')?.value || '')
 			});
 		}
@@ -1270,11 +1282,13 @@
 			filter_type: 'key',
 			filter_value: '',
 			max_rows: '20',
+			lookback_hours: '24',
 			history_points: '500',
 			merge_equal_states: '1',
 			merge_shorter_than: '0',
 			null_gap_mode: '0',
 			null_gap_backfill_first: '0',
+			row_sort: '0',
 			state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 		};
 		const rowEl = document.createElement('div');
@@ -1288,12 +1302,20 @@
 				'<label class="timestate-dataset-field"><span>Name (optional)</span><input type="text" class="timestate-dataset-title" placeholder="Agent availability"></label>',
 				'<label class="timestate-dataset-field is-full"><span>Item filter</span><div class="timestate-dataset-filter"><select class="timestate-dataset-filtertype"><option value="key">Item key filter (substring)</option><option value="name">Item name filter (substring)</option></select><input type="text" class="timestate-dataset-filtervalue" placeholder="zabbix[host,agent,available]"></div></label>',
 				'<label class="timestate-dataset-field"><span>Max rows</span><input type="text" class="timestate-dataset-maxrows"></label>',
+				'<label class="timestate-dataset-field"><span>Lookback (hours)</span><input type="text" class="timestate-dataset-lookback"></label>',
 				'<label class="timestate-dataset-field"><span>History points per item</span><input type="text" class="timestate-dataset-history"></label>',
 				'<label class="timestate-dataset-field"><span>Merge equal consecutive states</span><select class="timestate-dataset-mergeequal"><option value="1">Yes</option><option value="0">No</option></select></label>',
 				'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
 				'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
 				'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
-				'<label class="timestate-dataset-field is-full"><span>Value mappings (comma separated)</span><textarea class="timestate-dataset-map" placeholder="value:0=OK|#2E7D32,value:1=Problem|#C62828"></textarea></label>',
+				'<label class="timestate-dataset-field"><span>Row sorting</span><select class="timestate-dataset-rowsort"><option value="0">Name (A-Z)</option><option value="1">Current status (Problem first)</option><option value="2">Last change (most recent first)</option></select></label>',
+				'<input type="hidden" class="timestate-dataset-map">',
+				'<div class="timestate-map-builder timestate-map-builder--dataset is-full">',
+					'<div class="timestate-map-builder-title">Value mappings</div>',
+					'<div class="timestate-map-builder-help">Type + condition + display text + color. Add multiple rows.</div>',
+					'<div class="timestate-map-rows"></div>',
+					'<button type="button" class="timestate-map-add">Add mapping</button>',
+				'</div>',
 			'</div>'
 		].join('');
 
@@ -1301,16 +1323,37 @@
 		rowEl.querySelector('.timestate-dataset-filtertype').value = String(set.filter_type || 'key') === 'name' ? 'name' : 'key';
 		rowEl.querySelector('.timestate-dataset-filtervalue').value = String(set.filter_value || '');
 		rowEl.querySelector('.timestate-dataset-maxrows').value = String(set.max_rows || '20');
+		rowEl.querySelector('.timestate-dataset-lookback').value = String(set.lookback_hours || '24');
 		rowEl.querySelector('.timestate-dataset-history').value = String(set.history_points || '500');
 		rowEl.querySelector('.timestate-dataset-mergeequal').value = String(set.merge_equal_states ?? '1');
 		rowEl.querySelector('.timestate-dataset-mergeshort').value = String(set.merge_shorter_than || '0');
 		rowEl.querySelector('.timestate-dataset-nullgap').value = String(set.null_gap_mode ?? '0');
 		rowEl.querySelector('.timestate-dataset-backfill').value = String(set.null_gap_backfill_first ?? '0');
-		rowEl.querySelector('.timestate-dataset-map').value = String(set.state_map || '');
+		rowEl.querySelector('.timestate-dataset-rowsort').value = String(set.row_sort ?? '0');
+		const stateMapField = rowEl.querySelector('.timestate-dataset-map');
+		stateMapField.value = String(set.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828');
 		rowsWrap.appendChild(rowEl);
 
 		const titleEl = rowEl.querySelector('.timestate-dataset-title');
 		const headNameEl = rowEl.querySelector('.timestate-dataset-name');
+		const mapBuilder = rowEl.querySelector('.timestate-map-builder--dataset');
+		const mapRowsWrap = mapBuilder ? mapBuilder.querySelector('.timestate-map-rows') : null;
+		const mapAddBtn = mapBuilder ? mapBuilder.querySelector('.timestate-map-add') : null;
+		const mappingRows = parseMappings(stateMapField.value);
+		const effectiveRows = mappingRows.length > 0
+			? mappingRows
+			: [
+				{type: 'value', value: '0', label: 'OK', color: '#2E7D32'},
+				{type: 'value', value: '1', label: 'Problem', color: '#C62828'}
+			];
+		if (mapRowsWrap) {
+			for (const row of effectiveRows) {
+				buildMappingRow(mapRowsWrap, stateMapField, row);
+			}
+			mapAddBtn?.addEventListener('click', () => {
+				buildMappingRow(mapRowsWrap, stateMapField, {type: 'value', value: '', label: '', color: '#607D8B'});
+			});
+		}
 
 		const sync = () => {
 			const title = String(titleEl?.value || '').trim();
@@ -1374,11 +1417,13 @@
 				filter_type: String(findField('item_key_search')?.value || '') !== '' ? 'key' : 'name',
 				filter_value: String(findField('item_key_search')?.value || findField('item_name_search')?.value || ''),
 				max_rows: String(findField('max_rows')?.value || '20'),
+				lookback_hours: String(findField('lookback_hours')?.value || '24'),
 				history_points: String(findField('history_points')?.value || '500'),
 				merge_equal_states: String(findField('merge_equal_states')?.value || '1'),
 				merge_shorter_than: String(findField('merge_shorter_than')?.value || '0'),
 				null_gap_mode: String(findField('null_gap_mode')?.value || '0'),
 				null_gap_backfill_first: String(findField('null_gap_backfill_first')?.value || '0'),
+				row_sort: String(findField('row_sort')?.value || '0'),
 				state_map: String(findField('state_map')?.value || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			}];
 		}
@@ -1392,11 +1437,13 @@
 				filter_type: 'key',
 				filter_value: '',
 				max_rows: '20',
+				lookback_hours: '24',
 				history_points: '500',
 				merge_equal_states: '1',
 				merge_shorter_than: '0',
 				null_gap_mode: '0',
 				null_gap_backfill_first: '0',
+				row_sort: '0',
 				state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 			});
 		});
@@ -1404,12 +1451,14 @@
 		for (const legacy of [
 			'item_key_search',
 			'item_name_search',
+			'lookback_hours',
 			'max_rows',
 			'history_points',
 			'merge_equal_states',
 			'merge_shorter_than',
 			'null_gap_mode',
 			'null_gap_backfill_first',
+			'row_sort',
 			'state_map'
 		]) {
 			const field = findField(legacy);
