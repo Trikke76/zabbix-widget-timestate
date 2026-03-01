@@ -874,6 +874,10 @@
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-datasets{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
+			'.timestate-global-options-wrap{margin:10px 0 12px 0;padding-top:10px;border-top:1px solid #3f4a58;}',
+			'.timestate-global-options-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;}',
+			'.timestate-global-options-grid table{width:100%;border-collapse:collapse;}',
+			'.timestate-global-options-grid .form-field,.timestate-global-options-grid tr{margin:0;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
 			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0 0 8px 0;}',
 			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;}',
@@ -987,33 +991,62 @@
 		anchor.parentNode.insertBefore(row, anchor);
 	}
 
-	function decorateGlobalOptionRows(fieldNames) {
-		for (const fieldName of fieldNames) {
-			const row = getFieldRow(fieldName);
-			if (!row) {
-				continue;
-			}
-			row.classList.add('timestate-global-option-row');
-
-			if (row.tagName === 'TR') {
-				const labelCell = row.querySelector('td.table-forms-td-left, td:first-child');
-				const valueCell = row.querySelector('td.table-forms-td-right, td.table-forms-field, td:last-child');
-				if (valueCell) {
-					valueCell.style.borderLeft = '1px solid #3f4a58';
-					valueCell.style.paddingLeft = '12px';
-				}
-				if (labelCell) {
-					labelCell.style.width = '220px';
-					labelCell.style.textAlign = 'right';
-				}
-				continue;
-			}
-
-			row.style.maxWidth = '760px';
-			row.style.marginLeft = 'auto';
-			row.style.paddingLeft = '12px';
-			row.style.borderLeft = '1px solid #3f4a58';
+	function layoutGlobalOptionsTwoColumns(fieldNames, anchorFieldName) {
+		const rows = fieldNames
+			.map((fieldName) => getFieldRow(fieldName))
+			.filter((row) => !!row);
+		if (rows.length === 0) {
+			return;
 		}
+
+		const anchor = getFieldRow(anchorFieldName);
+		if (!anchor || !anchor.parentNode) {
+			return;
+		}
+
+		if (rows[0].tagName === 'TR') {
+			const hostRow = getFieldRow('hostids');
+			const hostParent = hostRow?.parentNode || anchor.parentNode;
+			const colCount = Math.max(1, anchor.querySelectorAll(':scope > td').length || 2);
+
+			const wrapperTr = document.createElement('tr');
+			wrapperTr.className = 'timestate-global-options-wrap';
+			const wrapperTd = document.createElement('td');
+			wrapperTd.colSpan = colCount;
+			const grid = document.createElement('div');
+			grid.className = 'timestate-global-options-grid';
+			const leftTable = document.createElement('table');
+			const rightTable = document.createElement('table');
+			const leftBody = document.createElement('tbody');
+			const rightBody = document.createElement('tbody');
+			leftTable.appendChild(leftBody);
+			rightTable.appendChild(rightBody);
+			grid.appendChild(leftTable);
+			grid.appendChild(rightTable);
+			wrapperTd.appendChild(grid);
+			wrapperTr.appendChild(wrapperTd);
+			hostParent.insertBefore(wrapperTr, anchor);
+
+			rows.forEach((row, idx) => {
+				(idx % 2 === 0 ? leftBody : rightBody).appendChild(row);
+			});
+			return;
+		}
+
+		const wrapper = document.createElement('div');
+		wrapper.className = 'timestate-global-options-wrap';
+		const grid = document.createElement('div');
+		grid.className = 'timestate-global-options-grid';
+		const left = document.createElement('div');
+		const right = document.createElement('div');
+		grid.appendChild(left);
+		grid.appendChild(right);
+		wrapper.appendChild(grid);
+		anchor.parentNode.insertBefore(wrapper, anchor);
+
+		rows.forEach((row, idx) => {
+			(idx % 2 === 0 ? left : right).appendChild(row);
+		});
 	}
 
 	function hideLabelCellsByText(labels) {
@@ -1888,7 +1921,7 @@
 		moveFieldRowBefore('legend_show_count', 'item_key_search');
 		moveFieldRowBefore('legend_show_duration', 'item_key_search');
 		moveFieldRowBefore('segment_label_mode', 'item_key_search');
-		decorateGlobalOptionRows([
+		layoutGlobalOptionsTwoColumns([
 			'row_sort',
 			'row_group_mode',
 			'row_group_collapsed',
@@ -1899,7 +1932,7 @@
 			'legend_show_count',
 			'legend_show_duration',
 			'segment_label_mode'
-		]);
+		], 'item_key_search');
 		showFieldRow('row_group_mode');
 		showFieldRow('row_group_collapsed');
 
