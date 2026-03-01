@@ -987,6 +987,35 @@
 		anchor.parentNode.insertBefore(row, anchor);
 	}
 
+	function decorateGlobalOptionRows(fieldNames) {
+		for (const fieldName of fieldNames) {
+			const row = getFieldRow(fieldName);
+			if (!row) {
+				continue;
+			}
+			row.classList.add('timestate-global-option-row');
+
+			if (row.tagName === 'TR') {
+				const labelCell = row.querySelector('td.table-forms-td-left, td:first-child');
+				const valueCell = row.querySelector('td.table-forms-td-right, td.table-forms-field, td:last-child');
+				if (valueCell) {
+					valueCell.style.borderLeft = '1px solid #3f4a58';
+					valueCell.style.paddingLeft = '12px';
+				}
+				if (labelCell) {
+					labelCell.style.width = '220px';
+					labelCell.style.textAlign = 'right';
+				}
+				continue;
+			}
+
+			row.style.maxWidth = '760px';
+			row.style.marginLeft = 'auto';
+			row.style.paddingLeft = '12px';
+			row.style.borderLeft = '1px solid #3f4a58';
+		}
+	}
+
 	function hideLabelCellsByText(labels) {
 		const wanted = new Set(labels.map((value) => String(value || '').trim().toLowerCase()));
 		if (wanted.size === 0) {
@@ -1854,10 +1883,23 @@
 		moveFieldRowBefore('row_group_collapsed', 'item_key_search');
 		moveFieldRowBefore('axis_tick_step', 'item_key_search');
 		moveFieldRowBefore('axis_label_density', 'item_key_search');
+		moveFieldRowBefore('axis_grid_mode', 'item_key_search');
 		moveFieldRowBefore('legend_mode', 'item_key_search');
 		moveFieldRowBefore('legend_show_count', 'item_key_search');
 		moveFieldRowBefore('legend_show_duration', 'item_key_search');
 		moveFieldRowBefore('segment_label_mode', 'item_key_search');
+		decorateGlobalOptionRows([
+			'row_sort',
+			'row_group_mode',
+			'row_group_collapsed',
+			'axis_tick_step',
+			'axis_label_density',
+			'axis_grid_mode',
+			'legend_mode',
+			'legend_show_count',
+			'legend_show_duration',
+			'segment_label_mode'
+		]);
 		showFieldRow('row_group_mode');
 		showFieldRow('row_group_collapsed');
 

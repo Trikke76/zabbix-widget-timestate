@@ -13,6 +13,7 @@ $payload = [
 	'row_group_collapsed' => (int) ($data['row_group_collapsed'] ?? 0),
 	'axis_tick_step' => (int) ($data['axis_tick_step'] ?? 0),
 	'axis_label_density' => (int) ($data['axis_label_density'] ?? 1),
+	'axis_grid_mode' => (int) ($data['axis_grid_mode'] ?? 0),
 	'legend_mode' => (int) ($data['legend_mode'] ?? 0),
 	'legend_show_count' => (int) ($data['legend_show_count'] ?? 1),
 	'legend_show_duration' => (int) ($data['legend_show_duration'] ?? 1),

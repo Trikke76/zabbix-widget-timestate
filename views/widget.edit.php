@@ -12,6 +12,7 @@ $form->addField(new CWidgetFieldSelectView($data['fields']['row_group_mode']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['row_group_collapsed']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['axis_tick_step']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['axis_label_density']));
+$form->addField(new CWidgetFieldSelectView($data['fields']['axis_grid_mode']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['legend_mode']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['legend_show_count']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['legend_show_duration']));

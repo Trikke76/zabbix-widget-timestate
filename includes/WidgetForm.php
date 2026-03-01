@@ -101,6 +101,13 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(1)
 			)
 			->addField(
+				(new CWidgetFieldSelect('axis_grid_mode', _('Show grid lines'), [
+					0 => _('Auto'),
+					1 => _('On'),
+					2 => _('Off')
+				]))->setDefault(0)
+			)
+			->addField(
 				(new CWidgetFieldSelect('legend_mode', _('Legend mode'), [
 					0 => _('List'),
 					1 => _('Table'),

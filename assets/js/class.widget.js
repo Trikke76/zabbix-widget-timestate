@@ -55,6 +55,8 @@ window.CWidgetTimeState = class extends CWidget {
 		const axisTickStep = Math.max(0, Number(model.axis_tick_step ?? 0));
 		const axisLabelDensity = Math.max(0, Math.min(2, Number(model.axis_label_density ?? 1)));
 		const ticks = this._buildTicks(timeFrom, timeTo, this._targetTickCount(axisLabelDensity), axisTickStep);
+		const axisGridMode = Math.max(0, Math.min(2, Number(model.axis_grid_mode ?? 0)));
+		const showLaneGrid = this._resolveGridVisibility(axisGridMode, ticks.items.length, rows.length);
 		const legendMode = Math.max(0, Math.min(2, Number(model.legend_mode ?? 0)));
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
@@ -80,7 +82,7 @@ window.CWidgetTimeState = class extends CWidget {
 
 			const lane = document.createElement('div');
 			lane.className = 'timestate__lane';
-			this._addLaneGrid(lane, ticks, timeFrom, range);
+			this._addLaneGrid(lane, ticks, timeFrom, range, showLaneGrid);
 
 			const segments = Array.isArray(row.segments) ? row.segments : [];
 			for (const seg of segments) {
@@ -381,7 +383,11 @@ window.CWidgetTimeState = class extends CWidget {
 		return {edgeInset: 6, minDelta: 8, widthFactor: 0.9, overlapPad: 0.8};
 	}
 
-	_addLaneGrid(lane, ticks, timeFrom, range) {
+	_addLaneGrid(lane, ticks, timeFrom, range, showGrid = true) {
+		if (!showGrid) {
+			return;
+		}
+
 		for (const tick of ticks.items) {
 			if (tick.edge) {
 				continue;
@@ -392,6 +398,21 @@ window.CWidgetTimeState = class extends CWidget {
 			line.style.left = `${Math.max(0, Math.min(100, left))}%`;
 			lane.appendChild(line);
 		}
+	}
+
+	_resolveGridVisibility(mode, tickCount, rowCount) {
+		if (mode === 1) {
+			return true;
+		}
+		if (mode === 2) {
+			return false;
+		}
+
+		// Auto: avoid visual overload on very dense timelines or very large row sets.
+		if (tickCount > 16 || rowCount > 40) {
+			return false;
+		}
+		return true;
 	}
 
 	_fmt(ts) {

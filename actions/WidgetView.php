@@ -24,6 +24,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$row_group_collapsed = ((int) ($this->fields_values['row_group_collapsed'] ?? 0)) === 1 ? 1 : 0;
 		$axis_tick_step = $this->clampInt((int) ($this->fields_values['axis_tick_step'] ?? 0), 0, 86400);
 		$axis_label_density = $this->clampInt((int) ($this->fields_values['axis_label_density'] ?? 1), 0, 2);
+		$axis_grid_mode = $this->clampInt((int) ($this->fields_values['axis_grid_mode'] ?? 0), 0, 2);
 		$legend_mode = $this->clampInt((int) ($this->fields_values['legend_mode'] ?? self::DEFAULT_LEGEND_MODE), 0, 2);
 		$legend_show_count = ((int) ($this->fields_values['legend_show_count'] ?? 1)) === 1 ? 1 : 0;
 		$legend_show_duration = ((int) ($this->fields_values['legend_show_duration'] ?? 1)) === 1 ? 1 : 0;
@@ -58,6 +59,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'row_group_collapsed' => $row_group_collapsed,
 				'axis_tick_step' => $axis_tick_step,
 				'axis_label_density' => $axis_label_density,
+				'axis_grid_mode' => $axis_grid_mode,
 				'legend_show_count' => $legend_show_count,
 				'legend_show_duration' => $legend_show_duration,
 				'segment_label_mode' => $segment_label_mode,
@@ -172,6 +174,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'row_group_collapsed' => $row_group_collapsed,
 			'axis_tick_step' => $axis_tick_step,
 			'axis_label_density' => $axis_label_density,
+			'axis_grid_mode' => $axis_grid_mode,
 			'legend_mode' => $legend_mode,
 			'legend_show_count' => $legend_show_count,
 			'legend_show_duration' => $legend_show_duration,
