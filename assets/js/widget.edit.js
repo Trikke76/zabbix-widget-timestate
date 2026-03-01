@@ -841,6 +841,340 @@
 		window.timestate_widget_form._itemPreviewBound = true;
 	}
 
+	function ensureValueMappingBuilderStyle() {
+		if (document.getElementById('timestate-map-builder-style')) {
+			return;
+		}
+
+		const style = document.createElement('style');
+		style.id = 'timestate-map-builder-style';
+		style.textContent = [
+			'.timestate-map-builder{margin-top:8px;padding:10px;border:1px solid #3a4655;border-radius:6px;background:#141b24;}',
+			'.timestate-map-builder-title{font-size:12px;font-weight:600;color:#d7e1ec;margin:0 0 8px 0;}',
+			'.timestate-map-builder-help{font-size:11px;color:#9fb2c8;margin:0 0 8px 0;}',
+			'.timestate-map-rows{display:flex;flex-direction:column;gap:8px;}',
+			'.timestate-map-row{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,1fr) 58px 28px;gap:8px;align-items:center;}',
+			'.timestate-map-row input,.timestate-map-row select{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:5px 7px;box-sizing:border-box;}',
+			'.timestate-map-cond-range{display:grid;grid-template-columns:1fr 1fr;gap:6px;}',
+			'.timestate-map-remove{width:28px;height:28px;border:1px solid #4b5a6d;background:#1a2431;color:#e7eef7;border-radius:6px;cursor:pointer;}',
+			'.timestate-map-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}'
+		].join('');
+		document.head.appendChild(style);
+	}
+
+	function parseMappings(raw) {
+		const text = String(raw || '').trim();
+		if (text === '') {
+			return [];
+		}
+
+		const entries = text
+			.split(/[\n,]+/)
+			.map((part) => String(part || '').trim())
+			.filter((part) => part.includes('='));
+
+		const rows = [];
+		for (const entry of entries) {
+			const [leftRaw, rightRaw] = entry.split(/=(.+)/).filter(Boolean);
+			const left = String(leftRaw || '').trim();
+			const right = String(rightRaw || '').trim();
+			if (!left || !right) {
+				continue;
+			}
+
+			let type = 'value';
+			let condition = left;
+			if (left.startsWith('value:')) {
+				type = 'value';
+				condition = left.slice(6).trim();
+			}
+			else if (left.startsWith('range:')) {
+				type = 'range';
+				condition = left.slice(6).trim();
+			}
+			else if (left.startsWith('regex:')) {
+				type = 'regex';
+				condition = left.slice(6).trim();
+			}
+			else if (left.startsWith('special:')) {
+				type = 'special';
+				condition = left.slice(8).trim();
+			}
+
+			const [labelRaw, colorRaw] = right.split('|');
+			const label = String(labelRaw || '').trim();
+			const color = normalizeHexColor(String(colorRaw || '').trim(), '#607D8B');
+
+			const row = {type, label, color, value: '', regex: '', special: 'unknown', min: '', max: ''};
+			if (type === 'range') {
+				const [min, max] = condition.split('..');
+				row.min = String(min || '').trim();
+				row.max = String(max || '').trim();
+			}
+			else if (type === 'regex') {
+				row.regex = condition;
+			}
+			else if (type === 'special') {
+				row.special = condition || 'unknown';
+			}
+			else {
+				row.value = condition;
+			}
+
+			rows.push(row);
+		}
+
+		return rows;
+	}
+
+	function serializeMappings(rows) {
+		const out = [];
+		for (const row of rows) {
+			const type = String(row.type || 'value');
+			const label = String(row.label || '').trim();
+			const color = normalizeHexColor(row.color, '#607D8B');
+			if (label === '') {
+				continue;
+			}
+
+			let left = '';
+			if (type === 'range') {
+				const min = String(row.min || '').trim();
+				const max = String(row.max || '').trim();
+				left = `range:${min}..${max}`;
+			}
+			else if (type === 'regex') {
+				left = `regex:${String(row.regex || '').trim()}`;
+			}
+			else if (type === 'special') {
+				left = `special:${String(row.special || 'unknown').trim()}`;
+			}
+			else {
+				left = `value:${String(row.value || '').trim()}`;
+			}
+
+			if (left.endsWith(':') || left.endsWith('..')) {
+				continue;
+			}
+			out.push(`${left}=${label}|${color}`);
+		}
+
+		return out.join(',');
+	}
+
+	function getMappingRowsFromDom(rowsWrap) {
+		const rows = [];
+		for (const rowEl of rowsWrap.querySelectorAll('.timestate-map-row')) {
+			const type = String(rowEl.querySelector('.timestate-map-type')?.value || 'value');
+			const label = String(rowEl.querySelector('.timestate-map-label')?.value || '');
+			const color = String(rowEl.querySelector('.timestate-map-color')?.value || '#607D8B');
+			const row = {type, label, color, value: '', regex: '', special: 'unknown', min: '', max: ''};
+
+			if (type === 'range') {
+				row.min = String(rowEl.querySelector('.timestate-map-min')?.value || '');
+				row.max = String(rowEl.querySelector('.timestate-map-max')?.value || '');
+			}
+			else if (type === 'regex') {
+				row.regex = String(rowEl.querySelector('.timestate-map-regex')?.value || '');
+			}
+			else if (type === 'special') {
+				row.special = String(rowEl.querySelector('.timestate-map-special')?.value || 'unknown');
+			}
+			else {
+				row.value = String(rowEl.querySelector('.timestate-map-value')?.value || '');
+			}
+
+			rows.push(row);
+		}
+		return rows;
+	}
+
+	function renderMappingCondition(rowEl, row) {
+		const condWrap = rowEl.querySelector('.timestate-map-cond');
+		if (!condWrap) {
+			return;
+		}
+		const type = String(rowEl.querySelector('.timestate-map-type')?.value || row.type || 'value');
+		condWrap.innerHTML = '';
+
+		if (type === 'range') {
+			const wrap = document.createElement('div');
+			wrap.className = 'timestate-map-cond-range';
+			const min = document.createElement('input');
+			min.type = 'text';
+			min.className = 'timestate-map-min';
+			min.placeholder = 'min';
+			min.value = String(row.min || '');
+			const max = document.createElement('input');
+			max.type = 'text';
+			max.className = 'timestate-map-max';
+			max.placeholder = 'max';
+			max.value = String(row.max || '');
+			wrap.appendChild(min);
+			wrap.appendChild(max);
+			condWrap.appendChild(wrap);
+		}
+		else if (type === 'regex') {
+			const input = document.createElement('input');
+			input.type = 'text';
+			input.className = 'timestate-map-regex';
+			input.placeholder = '/pattern/';
+			input.value = String(row.regex || '');
+			condWrap.appendChild(input);
+		}
+		else if (type === 'special') {
+			const select = document.createElement('select');
+			select.className = 'timestate-map-special';
+			for (const v of ['null', 'nan', 'true', 'false', 'empty', 'unknown']) {
+				const opt = document.createElement('option');
+				opt.value = v;
+				opt.textContent = v;
+				if (String(row.special || '') === v) {
+					opt.selected = true;
+				}
+				select.appendChild(opt);
+			}
+			condWrap.appendChild(select);
+		}
+		else {
+			const input = document.createElement('input');
+			input.type = 'text';
+			input.className = 'timestate-map-value';
+			input.placeholder = 'value';
+			input.value = String(row.value || '');
+			condWrap.appendChild(input);
+		}
+	}
+
+	function buildMappingRow(rowsWrap, stateMapField, row = null) {
+		const data = row || {type: 'value', value: '', label: '', color: '#607D8B'};
+		const rowEl = document.createElement('div');
+		rowEl.className = 'timestate-map-row';
+		rowEl.innerHTML = [
+			'<select class="timestate-map-type">',
+				'<option value="value">Value</option>',
+				'<option value="range">Range</option>',
+				'<option value="regex">Regex</option>',
+				'<option value="special">Special</option>',
+			'</select>',
+			'<div class="timestate-map-cond"></div>',
+			'<input type="text" class="timestate-map-label" placeholder="Display text">',
+			'<input type="text" class="timestate-map-color">',
+			'<button type="button" class="timestate-map-remove">×</button>'
+		].join('');
+
+		const typeSel = rowEl.querySelector('.timestate-map-type');
+		const labelInput = rowEl.querySelector('.timestate-map-label');
+		const colorInput = rowEl.querySelector('.timestate-map-color');
+		if (typeSel) {
+			typeSel.value = String(data.type || 'value');
+		}
+		if (labelInput) {
+			labelInput.value = String(data.label || '');
+		}
+		if (colorInput) {
+			colorInput.value = normalizeHexColor(String(data.color || '#607D8B'), '#607D8B');
+		}
+
+		renderMappingCondition(rowEl, data);
+		rowsWrap.appendChild(rowEl);
+
+		const picker = createModernBulkPicker(colorInput ? colorInput.value : '#607D8B');
+		picker.element.addEventListener('port24-color-change', (event) => {
+			if (colorInput) {
+				colorInput.value = normalizeHexColor(event.detail?.value, '#607D8B');
+				colorInput.dispatchEvent(new Event('input', {bubbles: true}));
+				colorInput.dispatchEvent(new Event('change', {bubbles: true}));
+			}
+		});
+		if (colorInput && colorInput.parentNode) {
+			colorInput.parentNode.insertBefore(picker.element, colorInput.nextSibling);
+		}
+
+		const sync = () => {
+			const rows = getMappingRowsFromDom(rowsWrap);
+			stateMapField.value = serializeMappings(rows);
+			stateMapField.dispatchEvent(new Event('input', {bubbles: true}));
+			stateMapField.dispatchEvent(new Event('change', {bubbles: true}));
+		};
+
+		rowEl.addEventListener('input', sync);
+		rowEl.addEventListener('change', sync);
+		rowEl.querySelector('.timestate-map-remove')?.addEventListener('click', () => {
+			rowEl.remove();
+			sync();
+		});
+		typeSel?.addEventListener('change', () => {
+			renderMappingCondition(rowEl, {type: typeSel.value});
+			sync();
+		});
+
+		sync();
+	}
+
+	function ensureValueMappingBuilder() {
+		if (window.timestate_widget_form._valueMappingBuilderBound) {
+			return;
+		}
+
+		const stateMapField = findField('state_map');
+		if (!stateMapField) {
+			return;
+		}
+
+		ensureValueMappingBuilderStyle();
+		const stateWrap = stateMapField.closest('.form-field');
+		if (!stateWrap || !stateWrap.parentNode) {
+			return;
+		}
+
+		const existing = document.getElementById('timestate-map-builder');
+		if (existing) {
+			window.timestate_widget_form._valueMappingBuilderBound = true;
+			return;
+		}
+
+		const builder = document.createElement('div');
+		builder.id = 'timestate-map-builder';
+		builder.className = 'timestate-map-builder';
+		builder.innerHTML = [
+			'<div class="timestate-map-builder-title">Value mappings</div>',
+			'<div class="timestate-map-builder-help">Type + condition + display text + color. Add multiple rows.</div>',
+			'<div class="timestate-map-rows"></div>',
+			'<button type="button" class="timestate-map-add">Add mapping</button>'
+		].join('');
+		stateWrap.parentNode.insertBefore(builder, stateWrap.nextSibling);
+
+		// Hide legacy raw field and legacy color fields to avoid confusion.
+		stateWrap.style.display = 'none';
+		for (const legacy of ['state_0_color', 'state_1_color', 'state_unknown_color']) {
+			const field = findField(legacy);
+			const wrap = field ? field.closest('.form-field') : null;
+			if (wrap) {
+				wrap.style.display = 'none';
+			}
+		}
+
+		const rowsWrap = builder.querySelector('.timestate-map-rows');
+		const addBtn = builder.querySelector('.timestate-map-add');
+		const rows = parseMappings(stateMapField.value);
+		if (rows.length === 0) {
+			rows.push(
+				{type: 'value', value: '0', label: 'OK', color: '#2E7D32'},
+				{type: 'value', value: '1', label: 'Problem', color: '#C62828'}
+			);
+		}
+		for (const row of rows) {
+			buildMappingRow(rowsWrap, stateMapField, row);
+		}
+
+		addBtn?.addEventListener('click', () => {
+			buildMappingRow(rowsWrap, stateMapField, {type: 'value', value: '', label: '', color: '#607D8B'});
+		});
+
+		window.timestate_widget_form._valueMappingBuilderBound = true;
+	}
+
 	window.timestate_widget_form = {
 		init() {
 			ensureModernBulkPickerStyle();
@@ -858,6 +1192,7 @@
 			observer.observe(document.body, {childList: true, subtree: true});
 
 			ensureItemPreviewBinding();
+			ensureValueMappingBuilder();
 		}
 	};
 })();

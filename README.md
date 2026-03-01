@@ -36,7 +36,8 @@ State timeline widget inspired by Grafana State Timeline.
 
 ## Notes
 
-- Value mappings (comma separated) support:
+- Value mappings can be configured via the widget edit row builder (type + condition + text + color).
+  Backend format (for reference) supports:
   - `value:0=OK|#2E7D32`
   - `range:80..100=High|#C62828`
   - `regex:/^ERR.*/=Error|#C62828`
