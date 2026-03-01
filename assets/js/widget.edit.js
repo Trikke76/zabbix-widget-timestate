@@ -882,6 +882,11 @@
 			'.timestate-global-panel--left td{padding-top:6px;padding-bottom:6px;}',
 			'.timestate-global-panel--left .table-forms-td-left{width:240px;}',
 			'.timestate-global-panel--left .form-field,.timestate-global-panel--left .field-row{margin:0 0 8px 0;}',
+			'.timestate-global-left-list{display:flex;flex-direction:column;gap:8px;}',
+			'.timestate-global-left-item{display:grid;grid-template-columns:220px minmax(0,1fr);gap:10px;align-items:center;}',
+			'.timestate-global-left-item-label{font-size:12px;color:#d8d8d8;text-align:right;}',
+			'.timestate-global-left-item-control{min-width:0;}',
+			'.timestate-global-left-item-control .form-field,.timestate-global-left-item-control .field-row{margin:0;}',
 			'.timestate-global-panel--right{border-left:1px solid #3f4a58;min-height:320px;padding-left:18px;}',
 			'.timestate-global-sidecar-title{font-size:13px;color:#cfd8e3;font-weight:600;margin:0 0 6px 0;}',
 			'.timestate-global-sidecar-note{font-size:12px;color:#9fb1c5;max-width:360px;line-height:1.35;}',
@@ -1009,10 +1014,42 @@
 			existing.remove();
 		}
 
-		const rows = fieldNames
-			.map((fieldName) => getFieldRow(fieldName))
-			.filter((row) => !!row);
-		if (rows.length === 0) {
+		const entries = [];
+		const seen = new Set();
+		for (const fieldName of fieldNames) {
+			const field = findField(fieldName);
+			if (!field) {
+				continue;
+			}
+			const row = getFieldRow(fieldName);
+			if (!row || seen.has(row)) {
+				continue;
+			}
+			seen.add(row);
+
+			let labelNode = null;
+			const prev = row.previousElementSibling;
+			if (prev && prev.matches('td, .table-forms-td-left, .form-grid-label, .form-field-label, .field-label')) {
+				labelNode = prev;
+			}
+
+			let labelText = '';
+			if (labelNode) {
+				labelText = String(labelNode.textContent || '').replace(/\s+/g, ' ').trim();
+			}
+			if (labelText === '') {
+				const aria = field.getAttribute('aria-label');
+				if (aria) {
+					labelText = String(aria).trim();
+				}
+			}
+			if (labelText === '') {
+				labelText = fieldName;
+			}
+
+			entries.push({row, labelNode, labelText});
+		}
+		if (entries.length === 0) {
 			return;
 		}
 
@@ -1042,7 +1079,7 @@
 			wrapperTd.appendChild(panels);
 			wrapperTr.appendChild(wrapperTd);
 			anchor.parentNode.insertBefore(wrapperTr, anchor);
-			rows.forEach((row) => {
+			entries.forEach(({row}) => {
 				if (row.tagName === 'TR') {
 					leftBody.appendChild(row);
 				}
@@ -1055,8 +1092,24 @@
 		wrapper.className = 'timestate-global-panels-row';
 		wrapper.appendChild(panels);
 		anchor.parentNode.insertBefore(wrapper, anchor);
-		rows.forEach((row) => {
-			leftPanel.appendChild(row);
+
+		const leftList = document.createElement('div');
+		leftList.className = 'timestate-global-left-list';
+		leftPanel.appendChild(leftList);
+
+		entries.forEach(({row, labelNode, labelText}) => {
+			if (labelNode) {
+				labelNode.style.display = 'none';
+			}
+
+			const item = document.createElement('div');
+			item.className = 'timestate-global-left-item';
+			item.innerHTML = [
+				`<div class="timestate-global-left-item-label">${labelText}</div>`,
+				'<div class="timestate-global-left-item-control"></div>'
+			].join('');
+			item.querySelector('.timestate-global-left-item-control').appendChild(row);
+			leftList.appendChild(item);
 		});
 	}
 
