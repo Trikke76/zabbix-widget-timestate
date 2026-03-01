@@ -875,8 +875,12 @@
 			'.timestate-datasets{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
 			'.timestate-global-options-wrap{margin:10px 0 12px 0;padding-top:10px;border-top:1px solid #3f4a58;}',
-			'.timestate-global-options-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;}',
+			'.timestate-global-options-grid{display:grid;grid-template-columns:minmax(520px,1fr) minmax(340px,1fr);gap:0 20px;align-items:stretch;}',
 			'.timestate-global-options-grid table{width:100%;border-collapse:collapse;}',
+			'.timestate-global-options-left{padding-right:10px;}',
+			'.timestate-global-options-right{border-left:1px solid #3f4a58;min-height:320px;padding:8px 0 0 18px;box-sizing:border-box;}',
+			'.timestate-global-options-right-title{font-size:13px;color:#cfd8e3;font-weight:600;margin:0 0 6px 0;}',
+			'.timestate-global-options-right-note{font-size:12px;color:#9fb1c5;max-width:360px;line-height:1.35;}',
 			'.timestate-global-options-grid .form-field,.timestate-global-options-grid tr{margin:0;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
 			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0 0 8px 0;}',
@@ -991,7 +995,7 @@
 		anchor.parentNode.insertBefore(row, anchor);
 	}
 
-	function layoutGlobalOptionsTwoColumns(fieldNames, anchorFieldName) {
+	function layoutGlobalOptionsSplitPanel(fieldNames, anchorFieldName) {
 		const rows = fieldNames
 			.map((fieldName) => getFieldRow(fieldName))
 			.filter((row) => !!row);
@@ -1016,19 +1020,23 @@
 			const grid = document.createElement('div');
 			grid.className = 'timestate-global-options-grid';
 			const leftTable = document.createElement('table');
-			const rightTable = document.createElement('table');
+			leftTable.className = 'timestate-global-options-left';
+			const rightPanel = document.createElement('div');
+			rightPanel.className = 'timestate-global-options-right';
+			rightPanel.innerHTML = [
+				'<div class="timestate-global-options-right-title">Global options</div>',
+				'<div class="timestate-global-options-right-note">Reserved area for future global controls.</div>'
+			].join('');
 			const leftBody = document.createElement('tbody');
-			const rightBody = document.createElement('tbody');
 			leftTable.appendChild(leftBody);
-			rightTable.appendChild(rightBody);
 			grid.appendChild(leftTable);
-			grid.appendChild(rightTable);
+			grid.appendChild(rightPanel);
 			wrapperTd.appendChild(grid);
 			wrapperTr.appendChild(wrapperTd);
 			hostParent.insertBefore(wrapperTr, anchor);
 
-			rows.forEach((row, idx) => {
-				(idx % 2 === 0 ? leftBody : rightBody).appendChild(row);
+			rows.forEach((row) => {
+				leftBody.appendChild(row);
 			});
 			return;
 		}
@@ -1038,14 +1046,20 @@
 		const grid = document.createElement('div');
 		grid.className = 'timestate-global-options-grid';
 		const left = document.createElement('div');
+		left.className = 'timestate-global-options-left';
 		const right = document.createElement('div');
+		right.className = 'timestate-global-options-right';
+		right.innerHTML = [
+			'<div class="timestate-global-options-right-title">Global options</div>',
+			'<div class="timestate-global-options-right-note">Reserved area for future global controls.</div>'
+		].join('');
 		grid.appendChild(left);
 		grid.appendChild(right);
 		wrapper.appendChild(grid);
 		anchor.parentNode.insertBefore(wrapper, anchor);
 
-		rows.forEach((row, idx) => {
-			(idx % 2 === 0 ? left : right).appendChild(row);
+		rows.forEach((row) => {
+			left.appendChild(row);
 		});
 	}
 
@@ -1921,7 +1935,7 @@
 		moveFieldRowBefore('legend_show_count', 'item_key_search');
 		moveFieldRowBefore('legend_show_duration', 'item_key_search');
 		moveFieldRowBefore('segment_label_mode', 'item_key_search');
-		layoutGlobalOptionsTwoColumns([
+		layoutGlobalOptionsSplitPanel([
 			'row_sort',
 			'row_group_mode',
 			'row_group_collapsed',
