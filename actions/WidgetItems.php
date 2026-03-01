@@ -51,10 +51,10 @@ class WidgetItems extends CController {
 
 		$search = [];
 		if ($item_key_search !== '') {
-			$search['key_'] = $item_key_search;
+			$search['key_'] = $this->normalizeSearchPattern($item_key_search);
 		}
 		if ($item_name_search !== '') {
-			$search['name'] = $item_name_search;
+			$search['name'] = $this->normalizeSearchPattern($item_name_search);
 		}
 		if ($search !== []) {
 			$params['search'] = $search;
@@ -105,6 +105,21 @@ class WidgetItems extends CController {
 		}
 
 		return array_values(array_unique($ids));
+	}
+
+	private function normalizeSearchPattern(string $value): string {
+		$value = trim($value);
+		if ($value === '') {
+			return $value;
+		}
+
+		// Keep explicit wildcard patterns untouched.
+		if (str_contains($value, '*') || str_contains($value, '?')) {
+			return $value;
+		}
+
+		// Default behavior: substring match while typing.
+		return '*' . $value . '*';
 	}
 
 	private function respond(array $items): void {
