@@ -1419,7 +1419,7 @@
 				'<label class="timestate-dataset-field is-full"><span>Item filter</span><div class="timestate-dataset-filter"><select class="timestate-dataset-filtertype"><option value="key">Item key filter (substring)</option><option value="name">Item name filter (substring)</option></select><div class="timestate-dataset-filter-input"><input type="text" class="timestate-dataset-filtervalue" placeholder="zabbix[host,agent,available]" autocomplete="off" autocapitalize="off" spellcheck="false"><div class="timestate-dataset-suggest is-hidden"></div></div></div></label>',
 				'<input type="hidden" class="timestate-dataset-filterexact" value="0">',
 				'<label class="timestate-dataset-field"><span>Max rows</span><input type="text" class="timestate-dataset-maxrows"></label>',
-				'<label class="timestate-dataset-field"><span>Lookback (hours)</span><input type="text" class="timestate-dataset-lookback"></label>',
+				'<label class="timestate-dataset-field"><span>Lookback (hours, shared timeline uses longest lookback)</span><input type="text" class="timestate-dataset-lookback"></label>',
 				'<label class="timestate-dataset-field"><span>History points per item</span><input type="text" class="timestate-dataset-history"></label>',
 				'<label class="timestate-dataset-field"><span>Merge equal consecutive states</span><select class="timestate-dataset-mergeequal"><option value="1">Yes</option><option value="0">No</option></select></label>',
 				'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
@@ -1834,6 +1834,7 @@
 		moveFieldRowBefore('legend_mode', 'item_key_search');
 		moveFieldRowBefore('legend_show_count', 'item_key_search');
 		moveFieldRowBefore('legend_show_duration', 'item_key_search');
+		moveFieldRowBefore('segment_label_mode', 'item_key_search');
 
 		for (const legacy of [
 			'item_key_search',

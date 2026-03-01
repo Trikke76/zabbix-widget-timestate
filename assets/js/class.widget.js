@@ -56,6 +56,7 @@ window.CWidgetTimeState = class extends CWidget {
 		const legendMode = Math.max(0, Math.min(2, Number(model.legend_mode ?? 0)));
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
+		const segmentLabelMode = Math.max(0, Math.min(2, Number(model.segment_label_mode ?? 0)));
 
 		const legend = new Map();
 		const table = document.createElement('div');
@@ -99,8 +100,8 @@ window.CWidgetTimeState = class extends CWidget {
 				block.style.width = `${Math.max(0.3, width)}%`;
 				block.style.background = color;
 				const tooltipText = `Value: ${valueText}\nFrom: ${this._fmt(tFrom)}\nTo: ${this._fmt(tTo)}`;
-				block.title = tooltipText;
 				this._bindTooltip(block, tooltip, tooltipText);
+				this._renderSegmentLabel(block, rawLabel, width, segmentLabelMode);
 
 				lane.appendChild(block);
 
@@ -437,5 +438,24 @@ window.CWidgetTimeState = class extends CWidget {
 		}
 
 		return parts.join(' ');
+	}
+
+	_renderSegmentLabel(block, label, widthPercent, mode) {
+		if (mode === 2) {
+			return;
+		}
+		const text = String(label || '').trim();
+		if (text === '') {
+			return;
+		}
+		const shouldShow = mode === 1 || widthPercent >= 9;
+		if (!shouldShow) {
+			return;
+		}
+
+		const span = document.createElement('span');
+		span.className = 'timestate__segment-label';
+		span.textContent = text;
+		block.appendChild(span);
 	}
 };

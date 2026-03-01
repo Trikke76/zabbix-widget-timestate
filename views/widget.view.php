@@ -12,6 +12,7 @@ $payload = [
 	'legend_mode' => (int) ($data['legend_mode'] ?? 0),
 	'legend_show_count' => (int) ($data['legend_show_count'] ?? 1),
 	'legend_show_duration' => (int) ($data['legend_show_duration'] ?? 1),
+	'segment_label_mode' => (int) ($data['segment_label_mode'] ?? 0),
 	'error' => $data['error'] ?? null
 ];
 

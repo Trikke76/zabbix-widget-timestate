@@ -85,6 +85,13 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(1)
 			)
 			->addField(
+				(new CWidgetFieldSelect('segment_label_mode', _('Segment labels'), [
+					0 => _('Auto'),
+					1 => _('Always'),
+					2 => _('Never')
+				]))->setDefault(0)
+			)
+			->addField(
 				(new CWidgetFieldTextBox('state_map', _('Value mappings (comma separated)')))
 					->setDefault('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			)

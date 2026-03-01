@@ -22,6 +22,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$legend_mode = $this->clampInt((int) ($this->fields_values['legend_mode'] ?? self::DEFAULT_LEGEND_MODE), 0, 2);
 		$legend_show_count = ((int) ($this->fields_values['legend_show_count'] ?? 1)) === 1 ? 1 : 0;
 		$legend_show_duration = ((int) ($this->fields_values['legend_show_duration'] ?? 1)) === 1 ? 1 : 0;
+		$segment_label_mode = $this->clampInt((int) ($this->fields_values['segment_label_mode'] ?? 0), 0, 2);
 		$data_sets = $this->parseDataSets(
 			(string) ($this->fields_values['datasets_json'] ?? ''),
 			[
@@ -50,6 +51,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'legend_mode' => $legend_mode,
 				'legend_show_count' => $legend_show_count,
 				'legend_show_duration' => $legend_show_duration,
+				'segment_label_mode' => $segment_label_mode,
 				'selected_items' => [],
 				'error' => _('Select at least one host.'),
 				'user' => ['debug_mode' => $this->getDebugMode()]
@@ -154,6 +156,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'legend_mode' => $legend_mode,
 			'legend_show_count' => $legend_show_count,
 			'legend_show_duration' => $legend_show_duration,
+			'segment_label_mode' => $segment_label_mode,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
 		]));
