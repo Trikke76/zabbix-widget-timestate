@@ -874,20 +874,7 @@
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-datasets{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
-			'.timestate-global-panels-row>td{padding-top:8px;border-top:1px solid #3f4a58;}',
-			'.timestate-global-panels{display:grid;grid-template-columns:minmax(560px,1fr) minmax(340px,420px);column-gap:20px;align-items:stretch;}',
-			'.timestate-global-panel{border:1px solid #3f4a58;border-radius:4px;background:rgba(20,26,34,.22);padding:10px 12px;box-sizing:border-box;}',
-			'.timestate-global-panel--left table{width:100%;border-collapse:collapse;}',
-			'.timestate-global-panel--left tr:first-child td{padding-top:0;}',
-			'.timestate-global-panel--left td{padding-top:6px;padding-bottom:6px;}',
-			'.timestate-global-panel--left .table-forms-td-left{width:240px;}',
-			'.timestate-global-panel--left .form-field,.timestate-global-panel--left .field-row{margin:0 0 8px 0;}',
-			'.timestate-global-left-list{display:flex;flex-direction:column;gap:8px;}',
-			'.timestate-global-left-item{display:grid;grid-template-columns:220px minmax(0,1fr);gap:10px;align-items:center;}',
-			'.timestate-global-left-item-label{font-size:12px;color:#d8d8d8;text-align:right;}',
-			'.timestate-global-left-item-control{min-width:0;}',
-			'.timestate-global-left-item-control .form-field,.timestate-global-left-item-control .field-row{margin:0;}',
-			'.timestate-global-panel--right{border-left:1px solid #3f4a58;min-height:320px;padding-left:18px;}',
+			'.timestate-global-sidecar-floating{position:absolute;top:80px;right:10px;width:min(36%,420px);min-width:320px;min-height:320px;border-left:1px solid #3f4a58;padding:10px 12px 0 18px;box-sizing:border-box;background:rgba(20,26,34,.24);border-radius:4px;pointer-events:none;}',
 			'.timestate-global-sidecar-title{font-size:13px;color:#cfd8e3;font-weight:600;margin:0 0 6px 0;}',
 			'.timestate-global-sidecar-note{font-size:12px;color:#9fb1c5;max-width:360px;line-height:1.35;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
@@ -1003,114 +990,33 @@
 		anchor.parentNode.insertBefore(row, anchor);
 	}
 
-	function layoutGlobalPanels(fieldNames, anchorFieldName) {
+	function injectGlobalSidecar(anchorFieldName) {
 		const anchor = getFieldRow(anchorFieldName);
-		if (!anchor || !anchor.parentNode) {
+		if (!anchor) {
 			return;
 		}
 
-		const existing = document.getElementById('timestate-global-panels-row');
+		const existing = document.getElementById('timestate-global-sidecar-row');
 		if (existing) {
 			existing.remove();
 		}
-
-		const entries = [];
-		const seen = new Set();
-		for (const fieldName of fieldNames) {
-			const field = findField(fieldName);
-			if (!field) {
-				continue;
-			}
-			const row = getFieldRow(fieldName);
-			if (!row || seen.has(row)) {
-				continue;
-			}
-			seen.add(row);
-
-			let labelNode = null;
-			const prev = row.previousElementSibling;
-			if (prev && prev.matches('td, .table-forms-td-left, .form-grid-label, .form-field-label, .field-label')) {
-				labelNode = prev;
-			}
-
-			let labelText = '';
-			if (labelNode) {
-				labelText = String(labelNode.textContent || '').replace(/\s+/g, ' ').trim();
-			}
-			if (labelText === '') {
-				const aria = field.getAttribute('aria-label');
-				if (aria) {
-					labelText = String(aria).trim();
-				}
-			}
-			if (labelText === '') {
-				labelText = fieldName;
-			}
-
-			entries.push({row, labelNode, labelText});
-		}
-		if (entries.length === 0) {
+		const dialog = anchor.closest('.overlay-dialogue, .overlay-dialogue.modal, .modal-dialogue, [role="dialog"]');
+		const body = dialog?.querySelector('.overlay-dialogue-body, .modal-dialogue-body, .overlay-dialogue-content');
+		if (!body) {
 			return;
 		}
+		if (window.getComputedStyle(body).position === 'static') {
+			body.style.position = 'relative';
+		}
 
-		const panels = document.createElement('div');
-		panels.className = 'timestate-global-panels';
-		const leftPanel = document.createElement('div');
-		leftPanel.className = 'timestate-global-panel timestate-global-panel--left';
-		const rightPanel = document.createElement('div');
-		rightPanel.className = 'timestate-global-panel timestate-global-panel--right';
-		rightPanel.innerHTML = [
+		const panel = document.createElement('div');
+		panel.id = 'timestate-global-sidecar-row';
+		panel.className = 'timestate-global-sidecar-floating';
+		panel.innerHTML = [
 			'<div class="timestate-global-sidecar-title">Global options</div>',
 			'<div class="timestate-global-sidecar-note">Reserved area for future global controls.</div>'
 		].join('');
-
-		panels.appendChild(leftPanel);
-		panels.appendChild(rightPanel);
-		if (anchor.tagName === 'TR') {
-			const wrapperTr = document.createElement('tr');
-			wrapperTr.id = 'timestate-global-panels-row';
-			wrapperTr.className = 'timestate-global-panels-row';
-			const wrapperTd = document.createElement('td');
-			wrapperTd.colSpan = Math.max(2, anchor.querySelectorAll(':scope > td').length || 2);
-			const leftTable = document.createElement('table');
-			const leftBody = document.createElement('tbody');
-			leftTable.appendChild(leftBody);
-			leftPanel.appendChild(leftTable);
-			wrapperTd.appendChild(panels);
-			wrapperTr.appendChild(wrapperTd);
-			anchor.parentNode.insertBefore(wrapperTr, anchor);
-			entries.forEach(({row}) => {
-				if (row.tagName === 'TR') {
-					leftBody.appendChild(row);
-				}
-			});
-			return;
-		}
-
-		const wrapper = document.createElement('div');
-		wrapper.id = 'timestate-global-panels-row';
-		wrapper.className = 'timestate-global-panels-row';
-		wrapper.appendChild(panels);
-		anchor.parentNode.insertBefore(wrapper, anchor);
-
-		const leftList = document.createElement('div');
-		leftList.className = 'timestate-global-left-list';
-		leftPanel.appendChild(leftList);
-
-		entries.forEach(({row, labelNode, labelText}) => {
-			if (labelNode) {
-				labelNode.style.display = 'none';
-			}
-
-			const item = document.createElement('div');
-			item.className = 'timestate-global-left-item';
-			item.innerHTML = [
-				`<div class="timestate-global-left-item-label">${labelText}</div>`,
-				'<div class="timestate-global-left-item-control"></div>'
-			].join('');
-			item.querySelector('.timestate-global-left-item-control').appendChild(row);
-			leftList.appendChild(item);
-		});
+		body.appendChild(panel);
 	}
 
 	function hideLabelCellsByText(labels) {
@@ -1974,21 +1880,7 @@
 			});
 		});
 
-		layoutGlobalPanels([
-			'name',
-			'rf_rate',
-			'hostids',
-			'row_sort',
-			'row_group_mode',
-			'row_group_collapsed',
-			'axis_tick_step',
-			'axis_label_density',
-			'axis_grid_mode',
-			'legend_mode',
-			'legend_show_count',
-			'legend_show_duration',
-			'segment_label_mode'
-		], 'datasets_json');
+		injectGlobalSidecar('datasets_json');
 		showFieldRow('row_group_mode');
 		showFieldRow('row_group_collapsed');
 
