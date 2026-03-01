@@ -54,10 +54,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$selected_items = [];
 
 		foreach ($data_sets as $data_set) {
+			$filter_type = (string) ($data_set['filter_type'] ?? 'key');
+			$filter_value = (string) ($data_set['filter_value'] ?? '');
+			$item_key_search = $filter_type === 'name' ? '' : $filter_value;
+			$item_name_search = $filter_type === 'name' ? $filter_value : '';
+
 			$items = $this->loadCandidateItems(
 				$hostids,
-				(string) $data_set['item_key_search'],
-				(string) $data_set['item_name_search'],
+				$item_key_search,
+				$item_name_search,
 				(int) $data_set['max_rows']
 			);
 			$value_mappings = is_array($data_set['rules']) ? $data_set['rules'] : [];
@@ -589,8 +594,17 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 		return [
 			'name' => trim((string) ($entry['name'] ?? '')),
-			'item_key_search' => trim((string) ($entry['item_key_search'] ?? '')),
-			'item_name_search' => trim((string) ($entry['item_name_search'] ?? '')),
+			'filter_type' => $this->normalizeFilterType(
+				(string) ($entry['filter_type'] ?? ''),
+				trim((string) ($entry['item_key_search'] ?? '')),
+				trim((string) ($entry['item_name_search'] ?? ''))
+			),
+			'filter_value' => trim((string) (
+				$entry['filter_value']
+				?? $entry['item_key_search']
+				?? $entry['item_name_search']
+				?? ''
+			)),
 			'max_rows' => $max_rows,
 			'history_points' => $history_points,
 			'merge_equal_states' => ((int) ($entry['merge_equal_states'] ?? 1)) === 1 ? 1 : 0,
@@ -599,6 +613,20 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'null_gap_backfill_first' => ((int) ($entry['null_gap_backfill_first'] ?? 0)) === 1 ? 1 : 0,
 			'rules' => $rules !== [] ? $rules : $this->parseValueMappings('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 		];
+	}
+
+	private function normalizeFilterType(string $type, string $legacy_key, string $legacy_name): string {
+		$type = strtolower(trim($type));
+		if ($type === 'key' || $type === 'name') {
+			return $type;
+		}
+		if ($legacy_key !== '') {
+			return 'key';
+		}
+		if ($legacy_name !== '') {
+			return 'name';
+		}
+		return 'key';
 	}
 
 	private function mapValue(string $raw_value, string $state, array $rules, array $base_colors): array {
