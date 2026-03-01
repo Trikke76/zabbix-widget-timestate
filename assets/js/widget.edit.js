@@ -996,6 +996,21 @@
 		anchor.parentNode.insertBefore(row, anchor);
 	}
 
+	function moveFieldRowBeforeAny(fieldName, anchorFieldNames) {
+		for (const anchorFieldName of anchorFieldNames) {
+			const row = getFieldRow(fieldName);
+			const anchor = getFieldRow(anchorFieldName);
+			if (!row || !anchor || !anchor.parentNode) {
+				continue;
+			}
+			if (row === anchor || row.parentNode !== anchor.parentNode) {
+				continue;
+			}
+			anchor.parentNode.insertBefore(row, anchor);
+			return;
+		}
+	}
+
 	function layoutGlobalOptionsSplitPanel(fieldNames, anchorFieldName) {
 		const rows = fieldNames
 			.map((fieldName) => getFieldRow(fieldName))
@@ -1925,17 +1940,18 @@
 			});
 		});
 
-		// Keep global row sorting, but move it close to Hosts.
-		moveFieldRowBefore('row_sort', 'item_key_search');
-		moveFieldRowBefore('row_group_mode', 'item_key_search');
-		moveFieldRowBefore('row_group_collapsed', 'item_key_search');
-		moveFieldRowBefore('axis_tick_step', 'item_key_search');
-		moveFieldRowBefore('axis_label_density', 'item_key_search');
-		moveFieldRowBefore('axis_grid_mode', 'item_key_search');
-		moveFieldRowBefore('legend_mode', 'item_key_search');
-		moveFieldRowBefore('legend_show_count', 'item_key_search');
-		moveFieldRowBefore('legend_show_duration', 'item_key_search');
-		moveFieldRowBefore('segment_label_mode', 'item_key_search');
+		// Keep global settings above data sets and grouped together.
+		const globalAnchorFields = ['datasets_json', 'item_key_search', 'item_name_search'];
+		moveFieldRowBeforeAny('row_sort', globalAnchorFields);
+		moveFieldRowBeforeAny('row_group_mode', globalAnchorFields);
+		moveFieldRowBeforeAny('row_group_collapsed', globalAnchorFields);
+		moveFieldRowBeforeAny('axis_tick_step', globalAnchorFields);
+		moveFieldRowBeforeAny('axis_label_density', globalAnchorFields);
+		moveFieldRowBeforeAny('axis_grid_mode', globalAnchorFields);
+		moveFieldRowBeforeAny('legend_mode', globalAnchorFields);
+		moveFieldRowBeforeAny('legend_show_count', globalAnchorFields);
+		moveFieldRowBeforeAny('legend_show_duration', globalAnchorFields);
+		moveFieldRowBeforeAny('segment_label_mode', globalAnchorFields);
 		layoutGlobalOptionsSplitPanel([
 			'row_sort',
 			'row_group_mode',
@@ -1947,7 +1963,7 @@
 			'legend_show_count',
 			'legend_show_duration',
 			'segment_label_mode'
-		], 'item_key_search');
+		], 'datasets_json');
 		showFieldRow('row_group_mode');
 		showFieldRow('row_group_collapsed');
 
