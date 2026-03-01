@@ -384,17 +384,38 @@
 
 		let colorsBuilt = false;
 		const positionPop = () => {
+			const pad = 8;
 			const rect = button.getBoundingClientRect();
-			pop.style.top = `${Math.round(rect.bottom + 6)}px`;
-			pop.style.left = `${Math.round(rect.left)}px`;
+			const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+			const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+			const popRect = pop.getBoundingClientRect();
+
+			let left = Math.round(rect.left);
+			let top = Math.round(rect.bottom + 6);
+
+			// Prefer below the button; if not enough space, flip above.
+			if (top + popRect.height + pad > vh) {
+				top = Math.round(rect.top - popRect.height - 6);
+			}
+			// Clamp vertically inside viewport.
+			top = Math.max(pad, Math.min(top, Math.max(pad, vh - popRect.height - pad)));
+
+			// Keep fully visible horizontally.
+			if (left + popRect.width + pad > vw) {
+				left = vw - popRect.width - pad;
+			}
+			left = Math.max(pad, left);
+
+			pop.style.top = `${top}px`;
+			pop.style.left = `${left}px`;
 		};
 		const closePop = () => {
 			pop.classList.add('is-hidden');
 		};
 		const openPop = () => {
 			ensureColorDots();
-			positionPop();
 			pop.classList.remove('is-hidden');
+			positionPop();
 		};
 		const ensureColorDots = () => {
 			if (colorsBuilt) {
