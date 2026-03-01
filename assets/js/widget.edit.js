@@ -849,17 +849,42 @@
 		const style = document.createElement('style');
 		style.id = 'timestate-map-builder-style';
 		style.textContent = [
+			'.overlay-dialogue.timestate-edit-wide,.overlay-dialogue.modal.timestate-edit-wide{width:min(1680px,96vw)!important;max-width:min(1680px,96vw)!important;}',
+			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-map-builder{margin-top:8px;padding:10px;border:1px solid #3a4655;border-radius:6px;background:#141b24;}',
 			'.timestate-map-builder-title{font-size:12px;font-weight:600;color:#d7e1ec;margin:0 0 8px 0;}',
 			'.timestate-map-builder-help{font-size:11px;color:#9fb2c8;margin:0 0 8px 0;}',
 			'.timestate-map-rows{display:flex;flex-direction:column;gap:8px;}',
-			'.timestate-map-row{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,1fr) 58px 28px;gap:8px;align-items:center;}',
+			'.timestate-map-row{display:grid;grid-template-columns:120px minmax(240px,1.35fr) minmax(220px,1fr) 64px 28px;gap:8px;align-items:center;}',
 			'.timestate-map-row input,.timestate-map-row select{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-map-cond-range{display:grid;grid-template-columns:1fr 1fr;gap:6px;}',
 			'.timestate-map-remove{width:28px;height:28px;border:1px solid #4b5a6d;background:#1a2431;color:#e7eef7;border-radius:6px;cursor:pointer;}',
-			'.timestate-map-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}'
+			'.timestate-map-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}',
+			'@media (max-width: 1240px){.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
+			'@media (max-width: 980px){.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color{grid-column:1 / 2;}.timestate-map-row .port24-modern-picker{grid-column:2 / 3;justify-self:start;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
 		document.head.appendChild(style);
+	}
+
+	function ensureWideEditDialog() {
+		const field = findField('state_map') || findField('item_key_search') || findField('item_name_search');
+		if (!field) {
+			return;
+		}
+
+		const dialog = field.closest('.overlay-dialogue, .overlay-dialogue.modal, .modal-dialogue, [role="dialog"]');
+		if (!dialog) {
+			return;
+		}
+
+		dialog.classList.add('timestate-edit-wide');
+		dialog.style.width = 'min(1680px, 96vw)';
+		dialog.style.maxWidth = 'min(1680px, 96vw)';
+
+		const body = dialog.querySelector('.overlay-dialogue-body, .modal-dialogue-body, .overlay-dialogue-content');
+		if (body) {
+			body.style.maxWidth = 'none';
+		}
 	}
 
 	function parseMappings(raw) {
@@ -1179,12 +1204,14 @@
 		init() {
 			ensureModernBulkPickerStyle();
 			ensurePickerOutsideClick();
+			ensureWideEditDialog();
 
 			for (const input of document.querySelectorAll('input[type="text"]')) {
 				enhanceColorField(input);
 			}
 
 			const observer = new MutationObserver(() => {
+				ensureWideEditDialog();
 				for (const input of document.querySelectorAll('input[type="text"]')) {
 					enhanceColorField(input);
 				}
