@@ -910,29 +910,6 @@
 		}
 	}
 
-	function hideLegacyLabelTexts(labels) {
-		const wanted = new Set(labels.map((v) => String(v).trim().toLowerCase()));
-		const candidates = document.querySelectorAll('label, td, th, .table-forms-td-left, .form-grid-label, .form-field-label, .field-label');
-
-		for (const el of candidates) {
-			const text = String(el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-			if (!wanted.has(text)) {
-				continue;
-			}
-
-			const row = el.closest('tr, .form-grid, .form-field, .field-row, li, .fields-group');
-			if (row) {
-				row.style.display = 'none';
-			}
-			el.style.display = 'none';
-
-			const sibling = el.nextElementSibling;
-			if (sibling && (sibling.matches('td') || sibling.classList.contains('table-forms-td-right') || sibling.classList.contains('table-forms-field'))) {
-				sibling.style.display = 'none';
-			}
-		}
-	}
-
 	function ensureWideEditDialog() {
 		const field = findField('state_map') || findField('item_key_search') || findField('item_name_search');
 		if (!field) {
@@ -1481,18 +1458,6 @@
 				hideFieldRow(legacy);
 			}
 		}
-
-		hideLegacyLabelTexts([
-			'lookback (hours)',
-			'max rows',
-			'history points per item',
-			'merge equal consecutive states',
-			'merge short segments (< seconds, 0 = off)',
-			'null-gap mode',
-			'backfill from first value',
-			'value mappings (comma separated)',
-			'data sets (json)'
-		]);
 
 		window.timestate_widget_form._dataSetBuilderBound = true;
 	}
