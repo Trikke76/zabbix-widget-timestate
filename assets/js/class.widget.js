@@ -111,6 +111,8 @@ window.CWidgetTimeState = class extends CWidget {
 		axisRow.className = 'timestate__row timestate__axis-row';
 		const axisLabel = document.createElement('div');
 		axisLabel.className = 'timestate__label timestate__label--axis';
+		axisLabel.textContent = this._fmtDateOnly(timeFrom);
+		axisLabel.title = this._fmt(timeFrom);
 		const axis = this._buildAxisTicks(ticks, timeFrom, range);
 		axisRow.appendChild(axisLabel);
 		axisRow.appendChild(axis);
@@ -163,15 +165,26 @@ window.CWidgetTimeState = class extends CWidget {
 	_buildAxisTicks(ticks, timeFrom, range) {
 		const axis = document.createElement('div');
 		axis.className = 'timestate__axis-detailed';
+		let prevLeft = -100;
 
 		for (const tick of ticks.items) {
 			const left = ((tick.ts - timeFrom) / range) * 100;
+			if (!tick.edge) {
+				if (left < 8 || left > 92) {
+					continue;
+				}
+				if (left - prevLeft < 6) {
+					continue;
+				}
+			}
+
 			const node = document.createElement('span');
 			node.className = `timestate__axis-tick${tick.edge ? ' is-edge' : ''}`;
 			node.style.left = `${Math.max(0, Math.min(100, left))}%`;
 			node.textContent = this._fmtTick(tick.ts, ticks.step);
 			node.title = this._fmt(tick.ts);
 			axis.appendChild(node);
+			prevLeft = left;
 		}
 
 		return axis;
@@ -207,6 +220,17 @@ window.CWidgetTimeState = class extends CWidget {
 		const dd = String(date.getDate()).padStart(2, '0');
 		const mo = String(date.getMonth() + 1).padStart(2, '0');
 		return `${dd}/${mo}`;
+	}
+
+	_fmtDateOnly(ts) {
+		if (!Number.isFinite(ts) || ts <= 0) {
+			return '-';
+		}
+		const date = new Date(ts * 1000);
+		const dd = String(date.getDate()).padStart(2, '0');
+		const mo = String(date.getMonth() + 1).padStart(2, '0');
+		const yyyy = date.getFullYear();
+		return `${dd}/${mo}/${yyyy}`;
 	}
 
 	_shortRowLabel(label) {

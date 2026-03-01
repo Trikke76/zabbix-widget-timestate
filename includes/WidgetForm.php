@@ -49,6 +49,13 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
+				(new CWidgetFieldSelect('row_sort', _('Row sorting'), [
+					0 => _('Name (A-Z)'),
+					1 => _('Current status (Problem first)'),
+					2 => _('Last change (most recent first)')
+				]))->setDefault(0)
+			)
+			->addField(
 				(new CWidgetFieldTextBox('state_map', _('State mapping (value=Label, comma separated)')))
 					->setDefault('0=OK,1=Problem')
 			)

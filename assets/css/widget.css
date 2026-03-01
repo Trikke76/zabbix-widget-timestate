@@ -73,7 +73,11 @@
 }
 
 .timestate__label--axis {
-	min-height: 1px;
+	min-height: 16px;
+	font-size: 11px;
+	color: #9fb1c5;
+	display: flex;
+	align-items: flex-start;
 }
 
 .timestate__lane-grid {

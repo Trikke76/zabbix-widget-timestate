@@ -12,6 +12,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 	private const DEFAULT_LOOKBACK_HOURS = 24;
 	private const DEFAULT_MAX_ROWS = 20;
 	private const DEFAULT_HISTORY_POINTS = 500;
+	private const DEFAULT_ROW_SORT = 0;
 
 	protected function doAction(): void {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
@@ -23,6 +24,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$merge_equal = ((int) ($this->fields_values['merge_equal_states'] ?? 1)) === 1;
 		$null_gap_mode = (int) ($this->fields_values['null_gap_mode'] ?? 0);
 		$connect_null_gaps = ($null_gap_mode === 1);
+		$row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
 		$state_map = $this->parseStateMap((string) ($this->fields_values['state_map'] ?? ''));
 		$base_colors = $this->buildBaseColorMap();
 		$time_to = time();
@@ -78,9 +80,16 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'row_label' => sprintf('%s :: %s', (string) $item['host_name'], (string) $item['name']),
 				'itemid' => (string) $item['itemid'],
 				'key_' => (string) $item['key_'],
-				'segments' => $segments
+				'segments' => $segments,
+				'_sort_state' => $this->getCurrentState($segments),
+				'_sort_last_change' => $this->getLastChangeTs($segments)
 			];
 		}
+		$this->sortRows($rows, $row_sort);
+		foreach ($rows as &$row) {
+			unset($row['_sort_state'], $row['_sort_last_change']);
+		}
+		unset($row);
 
 		$this->setResponse(new CControllerResponseData([
 			'name' => $this->widget->getDefaultName(),
@@ -167,6 +176,55 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$preview[] = sprintf('%s :: %s [%s]', $host_name, $name, $key);
 		}
 		return $preview;
+	}
+
+	private function sortRows(array &$rows, int $row_sort): void {
+		usort($rows, function(array $a, array $b) use ($row_sort): int {
+			if ($row_sort === 1) {
+				$pa = $this->stateSortPriority((string) ($a['_sort_state'] ?? 'unknown'));
+				$pb = $this->stateSortPriority((string) ($b['_sort_state'] ?? 'unknown'));
+				if ($pa !== $pb) {
+					return $pa <=> $pb;
+				}
+			}
+			elseif ($row_sort === 2) {
+				$la = (int) ($a['_sort_last_change'] ?? 0);
+				$lb = (int) ($b['_sort_last_change'] ?? 0);
+				if ($la !== $lb) {
+					return $lb <=> $la;
+				}
+			}
+
+			return strcasecmp((string) ($a['row_label'] ?? ''), (string) ($b['row_label'] ?? ''));
+		});
+	}
+
+	private function getCurrentState(array $segments): string {
+		if ($segments === []) {
+			return 'unknown';
+		}
+
+		$last = $segments[count($segments) - 1];
+		return (string) ($last['state'] ?? 'unknown');
+	}
+
+	private function getLastChangeTs(array $segments): int {
+		if ($segments === []) {
+			return 0;
+		}
+
+		$last = $segments[count($segments) - 1];
+		return (int) ($last['t_from'] ?? 0);
+	}
+
+	private function stateSortPriority(string $state): int {
+		if ($state === '1') {
+			return 0; // Problem first
+		}
+		if ($state === 'unknown') {
+			return 1; // then unknown
+		}
+		return 2; // then OK/others
 	}
 
 	private function buildSegments(
