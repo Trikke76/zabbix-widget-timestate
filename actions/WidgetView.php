@@ -13,11 +13,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 	private const DEFAULT_MAX_ROWS = 20;
 	private const DEFAULT_HISTORY_POINTS = 500;
 	private const DEFAULT_ROW_SORT = 0;
+	private const DEFAULT_LEGEND_MODE = 0;
 
 	protected function doAction(): void {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
 		$default_lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$default_row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
+		$legend_mode = $this->clampInt((int) ($this->fields_values['legend_mode'] ?? self::DEFAULT_LEGEND_MODE), 0, 2);
+		$legend_show_count = ((int) ($this->fields_values['legend_show_count'] ?? 1)) === 1 ? 1 : 0;
+		$legend_show_duration = ((int) ($this->fields_values['legend_show_duration'] ?? 1)) === 1 ? 1 : 0;
 		$data_sets = $this->parseDataSets(
 			(string) ($this->fields_values['datasets_json'] ?? ''),
 			[
@@ -43,6 +47,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'rows' => [],
 				'time_from' => $time_from,
 				'time_to' => $time_to,
+				'legend_mode' => $legend_mode,
+				'legend_show_count' => $legend_show_count,
+				'legend_show_duration' => $legend_show_duration,
 				'selected_items' => [],
 				'error' => _('Select at least one host.'),
 				'user' => ['debug_mode' => $this->getDebugMode()]
@@ -144,6 +151,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'selected_items' => $this->buildSelectedItemPreview($selected_items),
 			'time_from' => $global_time_from,
 			'time_to' => $time_to,
+			'legend_mode' => $legend_mode,
+			'legend_show_count' => $legend_show_count,
+			'legend_show_duration' => $legend_show_duration,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
 		]));

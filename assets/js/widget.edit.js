@@ -1831,6 +1831,9 @@
 
 		// Keep global row sorting, but move it close to Hosts.
 		moveFieldRowBefore('row_sort', 'item_key_search');
+		moveFieldRowBefore('legend_mode', 'item_key_search');
+		moveFieldRowBefore('legend_show_count', 'item_key_search');
+		moveFieldRowBefore('legend_show_duration', 'item_key_search');
 
 		for (const legacy of [
 			'item_key_search',

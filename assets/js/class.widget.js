@@ -53,6 +53,9 @@ window.CWidgetTimeState = class extends CWidget {
 		const timeTo = Number(model.time_to || 0);
 		const range = Math.max(1, timeTo - timeFrom);
 		const ticks = this._buildTicks(timeFrom, timeTo, 8);
+		const legendMode = Math.max(0, Math.min(2, Number(model.legend_mode ?? 0)));
+		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
+		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
 
 		const legend = new Map();
 		const table = document.createElement('div');
@@ -88,6 +91,7 @@ window.CWidgetTimeState = class extends CWidget {
 				const rawValue = String(seg.raw_value ?? '').trim();
 				const valueText = rawValue !== '' ? rawValue : rawLabel;
 				const legendLabel = this._isNumericLabel(rawLabel) ? 'Value' : rawLabel;
+				const duration = Math.max(0, tTo - tFrom);
 
 				const block = document.createElement('span');
 				block.className = 'timestate__segment';
@@ -100,9 +104,13 @@ window.CWidgetTimeState = class extends CWidget {
 
 				lane.appendChild(block);
 
-				if (!legend.has(legendLabel)) {
-					legend.set(legendLabel, color);
+				const entry = legend.get(legendLabel) || {label: legendLabel, color, count: 0, duration: 0};
+				entry.count += 1;
+				entry.duration += duration;
+				if (!entry.color && color) {
+					entry.color = color;
 				}
+				legend.set(legendLabel, entry);
 			}
 
 			rowEl.appendChild(labelEl);
@@ -122,17 +130,74 @@ window.CWidgetTimeState = class extends CWidget {
 		root.appendChild(axisRow);
 		root.appendChild(table);
 
-		if (legend.size <= 20) {
-			const legendEl = document.createElement('div');
-			legendEl.className = 'timestate__legend';
-			for (const [label, color] of legend.entries()) {
-				const item = document.createElement('span');
-				item.className = 'timestate__legend-item';
-				item.innerHTML = `<i style="background:${color}"></i>${this._escape(label)}`;
-				legendEl.appendChild(item);
+		if (legendMode !== 2 && legend.size > 0) {
+			const legendEntries = Array.from(legend.values());
+			if (legendMode === 1) {
+				root.appendChild(this._renderLegendTable(legendEntries, legendShowCount, legendShowDuration));
 			}
-			root.appendChild(legendEl);
+			else if (legendEntries.length <= 40) {
+				root.appendChild(this._renderLegendList(legendEntries, legendShowCount, legendShowDuration));
+			}
 		}
+	}
+
+	_renderLegendList(entries, showCount, showDuration) {
+		const legendEl = document.createElement('div');
+		legendEl.className = 'timestate__legend';
+		for (const entry of entries) {
+			const item = document.createElement('span');
+			item.className = 'timestate__legend-item';
+			const parts = [];
+			if (showCount) {
+				parts.push(`count ${entry.count}`);
+			}
+			if (showDuration) {
+				parts.push(this._fmtDuration(entry.duration));
+			}
+			const meta = parts.length > 0 ? `<small>${this._escape(parts.join(' • '))}</small>` : '';
+			item.innerHTML = `<i style="background:${entry.color}"></i><span>${this._escape(entry.label)}${meta}</span>`;
+			legendEl.appendChild(item);
+		}
+		return legendEl;
+	}
+
+	_renderLegendTable(entries, showCount, showDuration) {
+		const wrap = document.createElement('div');
+		wrap.className = 'timestate__legend-table-wrap';
+
+		const table = document.createElement('table');
+		table.className = 'timestate__legend-table';
+		const thead = document.createElement('thead');
+		const tbody = document.createElement('tbody');
+
+		const headCols = ['State'];
+		if (showCount) {
+			headCols.push('Count');
+		}
+		if (showDuration) {
+			headCols.push('Total duration');
+		}
+		thead.innerHTML = `<tr>${headCols.map((col) => `<th>${this._escape(col)}</th>`).join('')}</tr>`;
+
+		for (const entry of entries) {
+			const cols = [
+				`<td><span class="timestate__legend-state"><i style="background:${entry.color}"></i>${this._escape(entry.label)}</span></td>`
+			];
+			if (showCount) {
+				cols.push(`<td class="is-num">${entry.count}</td>`);
+			}
+			if (showDuration) {
+				cols.push(`<td class="is-num">${this._escape(this._fmtDuration(entry.duration))}</td>`);
+			}
+			const tr = document.createElement('tr');
+			tr.innerHTML = cols.join('');
+			tbody.appendChild(tr);
+		}
+
+		table.appendChild(thead);
+		table.appendChild(tbody);
+		wrap.appendChild(table);
+		return wrap;
 	}
 
 	_buildTicks(timeFrom, timeTo, targetCount) {
@@ -170,24 +235,65 @@ window.CWidgetTimeState = class extends CWidget {
 		axis.className = 'timestate__axis-detailed';
 		let prevLeft = -100;
 
+		const nodes = [];
 		for (const tick of ticks.items) {
-			const left = ((tick.ts - timeFrom) / range) * 100;
-			if (!tick.edge) {
-				if (left < 8 || left > 92) {
-					continue;
-				}
-				if (left - prevLeft < 6) {
-					continue;
+			nodes.push({
+				ts: tick.ts,
+				edge: !!tick.edge,
+				left: ((tick.ts - timeFrom) / range) * 100
+			});
+		}
+
+		// First pass: keep start/end and a sparse set of middle ticks.
+		const kept = [];
+		for (const node of nodes) {
+			if (node.edge) {
+				kept.push(node);
+				continue;
+			}
+
+			if (node.left < 6 || node.left > 94) {
+				continue;
+			}
+			if (node.left - prevLeft < 8) {
+				continue;
+			}
+			kept.push(node);
+			prevLeft = node.left;
+		}
+
+		// Second pass: remove overlaps between adjacent kept labels.
+		const finalNodes = [];
+		let lastLabelLen = 0;
+		let lastLeft = -100;
+		for (const node of kept) {
+			const label = this._fmtTick(node.ts, ticks.step);
+			const approxWidthPct = Math.max(4, label.length * 0.9);
+			if (lastLeft > -100) {
+				const minGap = (lastLabelLen / 2) + (approxWidthPct / 2) + 0.8;
+				if (node.left - lastLeft < minGap) {
+					// Prefer keeping edge labels over middle labels.
+					if (node.edge) {
+						finalNodes.pop();
+					}
+					else {
+						continue;
+					}
 				}
 			}
 
-			const node = document.createElement('span');
-			node.className = `timestate__axis-tick${tick.edge ? ' is-edge' : ''}`;
-			node.style.left = `${Math.max(0, Math.min(100, left))}%`;
-			node.textContent = this._fmtTick(tick.ts, ticks.step);
-			node.title = this._fmt(tick.ts);
-			axis.appendChild(node);
-			prevLeft = left;
+			finalNodes.push({...node, label});
+			lastLeft = node.left;
+			lastLabelLen = approxWidthPct;
+		}
+
+		for (const tickNode of finalNodes) {
+			const el = document.createElement('span');
+			el.className = `timestate__axis-tick${tickNode.edge ? ' is-edge' : ''}`;
+			el.style.left = `${Math.max(0, Math.min(100, tickNode.left))}%`;
+			el.textContent = tickNode.label;
+			el.title = this._fmt(tickNode.ts);
+			axis.appendChild(el);
 		}
 
 		return axis;
@@ -301,5 +407,35 @@ window.CWidgetTimeState = class extends CWidget {
 
 	_isNumericLabel(text) {
 		return /^-?\d+(?:\.\d+)?$/.test(String(text || '').trim());
+	}
+
+	_fmtDuration(seconds) {
+		let left = Math.max(0, Math.round(Number(seconds) || 0));
+		if (left <= 0) {
+			return '0s';
+		}
+
+		const days = Math.floor(left / 86400);
+		left -= days * 86400;
+		const hours = Math.floor(left / 3600);
+		left -= hours * 3600;
+		const minutes = Math.floor(left / 60);
+		left -= minutes * 60;
+
+		const parts = [];
+		if (days > 0) {
+			parts.push(`${days}d`);
+		}
+		if (hours > 0) {
+			parts.push(`${hours}h`);
+		}
+		if (minutes > 0) {
+			parts.push(`${minutes}m`);
+		}
+		if (left > 0 && parts.length < 2) {
+			parts.push(`${left}s`);
+		}
+
+		return parts.join(' ');
 	}
 };

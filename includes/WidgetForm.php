@@ -66,6 +66,25 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
+				(new CWidgetFieldSelect('legend_mode', _('Legend mode'), [
+					0 => _('List'),
+					1 => _('Table'),
+					2 => _('Hidden')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldSelect('legend_show_count', _('Legend: show count'), [
+					1 => _('Yes'),
+					0 => _('No')
+				]))->setDefault(1)
+			)
+			->addField(
+				(new CWidgetFieldSelect('legend_show_duration', _('Legend: show total duration'), [
+					1 => _('Yes'),
+					0 => _('No')
+				]))->setDefault(1)
+			)
+			->addField(
 				(new CWidgetFieldTextBox('state_map', _('Value mappings (comma separated)')))
 					->setDefault('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			)

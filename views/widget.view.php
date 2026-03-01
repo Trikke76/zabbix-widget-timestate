@@ -9,6 +9,9 @@ $payload = [
 	'selected_items' => $data['selected_items'] ?? [],
 	'time_from' => (int) ($data['time_from'] ?? time() - 3600),
 	'time_to' => (int) ($data['time_to'] ?? time()),
+	'legend_mode' => (int) ($data['legend_mode'] ?? 0),
+	'legend_show_count' => (int) ($data['legend_show_count'] ?? 1),
+	'legend_show_duration' => (int) ($data['legend_show_duration'] ?? 1),
 	'error' => $data['error'] ?? null
 ];
 

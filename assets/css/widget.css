@@ -117,7 +117,70 @@
 	font-size: 11px;
 }
 
+.timestate__legend-item > span {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+}
+
+.timestate__legend-item small {
+	font-size: 10px;
+	color: #9fb1c5;
+}
+
 .timestate__legend-item i {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+
+.timestate__legend-table-wrap {
+	margin-top: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+	background: rgba(15, 23, 34, 0.35);
+	overflow: auto;
+}
+
+.timestate__legend-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 11px;
+}
+
+.timestate__legend-table th,
+.timestate__legend-table td {
+	padding: 6px 8px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	white-space: nowrap;
+}
+
+.timestate__legend-table th {
+	text-align: left;
+	color: #9fb1c5;
+	font-weight: 600;
+}
+
+.timestate__legend-table td {
+	color: #d6e0ea;
+}
+
+.timestate__legend-table td.is-num {
+	text-align: right;
+}
+
+.timestate__legend-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.timestate__legend-state {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.timestate__legend-state i {
 	display: inline-block;
 	width: 10px;
 	height: 10px;
