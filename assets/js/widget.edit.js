@@ -910,6 +910,54 @@
 		}
 	}
 
+	function getFieldRow(fieldName) {
+		const field = findField(fieldName);
+		if (!field) {
+			return null;
+		}
+
+		return field.closest('tr, .form-field, .form-grid, .field-row, li');
+	}
+
+	function moveFieldRowBefore(fieldName, anchorFieldName) {
+		const row = getFieldRow(fieldName);
+		const anchor = getFieldRow(anchorFieldName);
+		if (!row || !anchor || !anchor.parentNode) {
+			return;
+		}
+		if (row === anchor || row.parentNode !== anchor.parentNode) {
+			return;
+		}
+
+		anchor.parentNode.insertBefore(row, anchor);
+	}
+
+	function hideLabelCellsByText(labels) {
+		const wanted = new Set(labels.map((value) => String(value || '').trim().toLowerCase()));
+		if (wanted.size === 0) {
+			return;
+		}
+
+		const cells = document.querySelectorAll('td, .table-forms-td-left, .form-grid-label, .form-field-label, .field-label');
+		for (const cell of cells) {
+			const text = String(cell.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+			if (!wanted.has(text)) {
+				continue;
+			}
+
+			cell.style.display = 'none';
+			const right = cell.nextElementSibling;
+			if (right && (right.matches('td') || right.classList.contains('table-forms-td-right') || right.classList.contains('table-forms-field'))) {
+				right.style.display = 'none';
+			}
+
+			const row = cell.closest('tr, .form-field, .form-grid, .field-row, li');
+			if (row) {
+				row.style.display = 'none';
+			}
+		}
+	}
+
 	function ensureWideEditDialog() {
 		const field = findField('state_map') || findField('item_key_search') || findField('item_name_search');
 		if (!field) {
@@ -1440,6 +1488,9 @@
 			});
 		});
 
+		// Keep global row sorting, but move it close to Hosts.
+		moveFieldRowBefore('row_sort', 'item_key_search');
+
 		for (const legacy of [
 			'item_key_search',
 			'item_name_search',
@@ -1458,6 +1509,20 @@
 				hideFieldRow(legacy);
 			}
 		}
+
+		hideLabelCellsByText([
+			'Item key filter (substring)',
+			'Item name filter (substring)',
+			'Lookback (hours)',
+			'Max rows',
+			'History points per item',
+			'Merge equal consecutive states',
+			'Merge short segments (< seconds, 0 = off)',
+			'Null-gap mode',
+			'Backfill from first value',
+			'Value mappings (comma separated)',
+			'Data sets (JSON)'
+		]);
 
 		window.timestate_widget_form._dataSetBuilderBound = true;
 	}
