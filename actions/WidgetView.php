@@ -58,6 +58,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		foreach ($data_sets as $data_set) {
 			$filter_type = (string) ($data_set['filter_type'] ?? 'key');
 			$filter_value = (string) ($data_set['filter_value'] ?? '');
+			$filter_exact = ((int) ($data_set['filter_exact'] ?? 0)) === 1;
 			$item_key_search = $filter_type === 'name' ? '' : $filter_value;
 			$item_name_search = $filter_type === 'name' ? $filter_value : '';
 			$lookback_hours = (int) ($data_set['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS);
@@ -68,7 +69,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 				$hostids,
 				$item_key_search,
 				$item_name_search,
-				(int) $data_set['max_rows']
+				(int) $data_set['max_rows'],
+				$filter_exact
 			);
 			$value_mappings = is_array($data_set['rules']) ? $data_set['rules'] : [];
 			$history_points = (int) $data_set['history_points'];
@@ -162,7 +164,13 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return array_values(array_unique($ids));
 	}
 
-	private function loadCandidateItems(array $hostids, string $item_key_search, string $item_name_search, int $max_rows): array {
+	private function loadCandidateItems(
+		array $hostids,
+		string $item_key_search,
+		string $item_name_search,
+		int $max_rows,
+		bool $filter_exact = false
+	): array {
 		$params = [
 			'output' => ['itemid', 'name', 'key_', 'value_type', 'hostid'],
 			'selectHosts' => ['name'],
@@ -185,6 +193,17 @@ class WidgetView extends CControllerDashboardWidgetView {
 		}
 
 		$items = API::Item()->get($params) ?: [];
+		if ($filter_exact) {
+			$items = array_values(array_filter($items, static function(array $item) use ($item_key_search, $item_name_search): bool {
+				if ($item_key_search !== '') {
+					return strcasecmp((string) ($item['key_'] ?? ''), $item_key_search) === 0;
+				}
+				if ($item_name_search !== '') {
+					return strcasecmp((string) ($item['name'] ?? ''), $item_name_search) === 0;
+				}
+				return true;
+			}));
+		}
 		usort($items, static function(array $a, array $b): int {
 			$host_a = isset($a['hosts'][0]['name']) ? (string) $a['hosts'][0]['name'] : '';
 			$host_b = isset($b['hosts'][0]['name']) ? (string) $b['hosts'][0]['name'] : '';
@@ -611,6 +630,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				?? $entry['item_name_search']
 				?? ''
 			)),
+			'filter_exact' => ((int) ($entry['filter_exact'] ?? 0)) === 1 ? 1 : 0,
 			'lookback_hours' => $lookback_hours,
 			'max_rows' => $max_rows,
 			'history_points' => $history_points,

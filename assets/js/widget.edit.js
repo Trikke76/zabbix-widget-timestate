@@ -1102,6 +1102,7 @@
 						|| entry.item_name_search
 						|| ''
 					),
+					filter_exact: String(entry.filter_exact ?? '0'),
 					max_rows: String(entry.max_rows || '20'),
 					lookback_hours: String(entry.lookback_hours || '24'),
 					history_points: String(entry.history_points || '500'),
@@ -1123,6 +1124,7 @@
 			const name = String(set.name || '').trim();
 			const filter_type = String(set.filter_type || 'key') === 'name' ? 'name' : 'key';
 			const filter_value = String(set.filter_value || '').trim();
+			const filter_exact = String(set.filter_exact ?? '0').trim();
 			const max_rows = String(set.max_rows || '').trim();
 			const lookback_hours = String(set.lookback_hours || '').trim();
 			const history_points = String(set.history_points || '').trim();
@@ -1138,6 +1140,7 @@
 				name,
 				filter_type,
 				filter_value,
+				filter_exact,
 				max_rows,
 				lookback_hours,
 				history_points,
@@ -1344,6 +1347,7 @@
 				name: String(rowEl.querySelector('.timestate-dataset-title')?.value || ''),
 				filter_type: String(rowEl.querySelector('.timestate-dataset-filtertype')?.value || 'key'),
 				filter_value: String(rowEl.querySelector('.timestate-dataset-filtervalue')?.value || ''),
+				filter_exact: String(rowEl.querySelector('.timestate-dataset-filterexact')?.value || '0'),
 				max_rows: String(rowEl.querySelector('.timestate-dataset-maxrows')?.value || '20'),
 				lookback_hours: String(rowEl.querySelector('.timestate-dataset-lookback')?.value || '24'),
 				history_points: String(rowEl.querySelector('.timestate-dataset-history')?.value || '500'),
@@ -1393,6 +1397,7 @@
 			name: '',
 			filter_type: 'key',
 			filter_value: '',
+			filter_exact: '0',
 			max_rows: '20',
 			lookback_hours: '24',
 			history_points: '500',
@@ -1412,6 +1417,7 @@
 			'<div class="timestate-dataset-grid">',
 				'<label class="timestate-dataset-field"><span>Name (optional)</span><input type="text" class="timestate-dataset-title" placeholder="Agent availability"></label>',
 				'<label class="timestate-dataset-field is-full"><span>Item filter</span><div class="timestate-dataset-filter"><select class="timestate-dataset-filtertype"><option value="key">Item key filter (substring)</option><option value="name">Item name filter (substring)</option></select><div class="timestate-dataset-filter-input"><input type="text" class="timestate-dataset-filtervalue" placeholder="zabbix[host,agent,available]"><div class="timestate-dataset-suggest is-hidden"></div></div></div></label>',
+				'<input type="hidden" class="timestate-dataset-filterexact" value="0">',
 				'<label class="timestate-dataset-field"><span>Max rows</span><input type="text" class="timestate-dataset-maxrows"></label>',
 				'<label class="timestate-dataset-field"><span>Lookback (hours)</span><input type="text" class="timestate-dataset-lookback"></label>',
 				'<label class="timestate-dataset-field"><span>History points per item</span><input type="text" class="timestate-dataset-history"></label>',
@@ -1433,6 +1439,7 @@
 		rowEl.querySelector('.timestate-dataset-title').value = String(set.name || '');
 		rowEl.querySelector('.timestate-dataset-filtertype').value = String(set.filter_type || 'key') === 'name' ? 'name' : 'key';
 		rowEl.querySelector('.timestate-dataset-filtervalue').value = String(set.filter_value || '');
+		rowEl.querySelector('.timestate-dataset-filterexact').value = String(set.filter_exact || '0');
 		rowEl.querySelector('.timestate-dataset-maxrows').value = String(set.max_rows || '20');
 		rowEl.querySelector('.timestate-dataset-lookback').value = String(set.lookback_hours || '24');
 		rowEl.querySelector('.timestate-dataset-history').value = String(set.history_points || '500');
@@ -1450,6 +1457,7 @@
 		const suggestBox = rowEl.querySelector('.timestate-dataset-suggest');
 		const filterInput = rowEl.querySelector('.timestate-dataset-filtervalue');
 		const filterTypeSel = rowEl.querySelector('.timestate-dataset-filtertype');
+		const filterExactInput = rowEl.querySelector('.timestate-dataset-filterexact');
 		const mapBuilder = rowEl.querySelector('.timestate-map-builder--dataset');
 		const mapRowsWrap = mapBuilder ? mapBuilder.querySelector('.timestate-map-rows') : null;
 		const mapAddBtn = mapBuilder ? mapBuilder.querySelector('.timestate-map-add') : null;
@@ -1543,11 +1551,18 @@
 				row.addEventListener('mousedown', (event) => {
 					event.preventDefault();
 					if (filterInput) {
+						rowEl.dataset.suggestLock = '1';
 						filterInput.value = mainText;
+						if (filterExactInput) {
+							filterExactInput.value = '1';
+						}
 						filterInput.dispatchEvent(new Event('input', {bubbles: true}));
 						filterInput.dispatchEvent(new Event('change', {bubbles: true}));
 					}
 					hideSuggest();
+					window.setTimeout(() => {
+						rowEl.dataset.suggestLock = '0';
+					}, 120);
 				});
 				suggestBox.appendChild(row);
 			}
@@ -1568,6 +1583,7 @@
 
 			const filterType = String(filterTypeSel?.value || 'key');
 			const filterValue = String(filterInput?.value || '').trim();
+			const filterExact = String(filterExactInput?.value || '0') === '1' ? '1' : '0';
 			const maxRows = Math.max(1, Math.min(200, Number(rowEl.querySelector('.timestate-dataset-maxrows')?.value || 20)));
 			if (filterValue.length < 1) {
 				hideSuggest();
@@ -1587,6 +1603,7 @@
 				hostids_csv: hostids.join(','),
 				item_key_search: filterType === 'key' ? filterValue : '',
 				item_name_search: filterType === 'name' ? filterValue : '',
+				filter_exact: filterExact,
 				max_rows: String(Math.max(maxRows, 50))
 			});
 
@@ -1628,6 +1645,7 @@
 
 			const filterType = String(rowEl.querySelector('.timestate-dataset-filtertype')?.value || 'key');
 			const filterValue = String(rowEl.querySelector('.timestate-dataset-filtervalue')?.value || '').trim();
+			const filterExact = String(filterExactInput?.value || '0') === '1' ? '1' : '0';
 			const maxRows = Math.max(1, Math.min(200, Number(rowEl.querySelector('.timestate-dataset-maxrows')?.value || 20)));
 
 			if (filterValue.length < 1) {
@@ -1642,6 +1660,7 @@
 				hostids_csv: hostids.join(','),
 				item_key_search: filterType === 'key' ? filterValue : '',
 				item_name_search: filterType === 'name' ? filterValue : '',
+				filter_exact: filterExact,
 				max_rows: String(maxRows)
 			});
 
@@ -1684,10 +1703,20 @@
 		rowEl.addEventListener('input', sync);
 		rowEl.addEventListener('change', sync);
 		rowEl.querySelector('.timestate-dataset-filtertype')?.addEventListener('change', () => {
+			if (filterExactInput) {
+				filterExactInput.value = '0';
+			}
 			scheduleSuggest();
 			schedulePreview();
 		});
 		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('input', () => {
+			if (rowEl.dataset.suggestLock !== '1' && filterExactInput) {
+				filterExactInput.value = '0';
+			}
+			if (rowEl.dataset.suggestLock === '1') {
+				schedulePreview();
+				return;
+			}
 			scheduleSuggest();
 			schedulePreview();
 		});
@@ -1749,6 +1778,7 @@
 				name: '',
 				filter_type: String(findField('item_key_search')?.value || '') !== '' ? 'key' : 'name',
 				filter_value: String(findField('item_key_search')?.value || findField('item_name_search')?.value || ''),
+				filter_exact: '0',
 				max_rows: String(findField('max_rows')?.value || '20'),
 				lookback_hours: String(findField('lookback_hours')?.value || '24'),
 				history_points: String(findField('history_points')?.value || '500'),
@@ -1768,6 +1798,7 @@
 				name: '',
 				filter_type: 'key',
 				filter_value: '',
+				filter_exact: '0',
 				max_rows: '20',
 				lookback_hours: '24',
 				history_points: '500',

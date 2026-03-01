@@ -21,6 +21,7 @@ class WidgetItems extends CController {
 			'hostids_csv' => 'string',
 			'item_key_search' => 'string',
 			'item_name_search' => 'string',
+			'filter_exact' => 'int32',
 			'max_rows' => 'int32'
 		]);
 	}
@@ -33,6 +34,7 @@ class WidgetItems extends CController {
 		$hostids = $this->parseHostIds((string) $this->getInput('hostids_csv', ''));
 		$item_key_search = trim((string) $this->getInput('item_key_search', ''));
 		$item_name_search = trim((string) $this->getInput('item_name_search', ''));
+		$filter_exact = ((int) $this->getInput('filter_exact', 0)) === 1;
 		$max_rows = (int) $this->getInput('max_rows', 20);
 		$max_rows = max(1, min($max_rows, self::MAX_SUGGESTIONS));
 
@@ -63,6 +65,17 @@ class WidgetItems extends CController {
 		}
 
 		$items = API::Item()->get($params) ?: [];
+		if ($filter_exact) {
+			$items = array_values(array_filter($items, static function(array $item) use ($item_key_search, $item_name_search): bool {
+				if ($item_key_search !== '') {
+					return strcasecmp((string) ($item['key_'] ?? ''), $item_key_search) === 0;
+				}
+				if ($item_name_search !== '') {
+					return strcasecmp((string) ($item['name'] ?? ''), $item_name_search) === 0;
+				}
+				return true;
+			}));
+		}
 		usort($items, static function(array $a, array $b): int {
 			$host_a = isset($a['hosts'][0]['name']) ? (string) $a['hosts'][0]['name'] : '';
 			$host_b = isset($b['hosts'][0]['name']) ? (string) $b['hosts'][0]['name'] : '';
