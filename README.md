@@ -25,8 +25,9 @@ State timeline widget inspired by Grafana State Timeline.
   - `Connected` = extend neighboring states through missing intervals.
 - Fallback deterministic colors for unmapped state values.
 
-![image1.png](Widget)
-![image2.png](Edit widget)
+![Widget](image1.png)
+
+![Edit page](image2.png)
 
 ## Install
 
