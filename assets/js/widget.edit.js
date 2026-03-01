@@ -1571,6 +1571,11 @@
 		};
 
 		const refreshSuggest = async () => {
+			if (document.activeElement !== filterInput) {
+				hideSuggest();
+				return;
+			}
+
 			const hostids = getHostIds();
 			if (hostids.length === 0) {
 				renderSuggest([], 'key');
@@ -1720,7 +1725,6 @@
 			scheduleSuggest();
 			schedulePreview();
 		});
-		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('focus', scheduleSuggest);
 		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('blur', () => {
 			window.setTimeout(hideSuggest, 120);
 		});
@@ -1733,7 +1737,6 @@
 			sync();
 		});
 		sync();
-		scheduleSuggest();
 		schedulePreview();
 	}
 
