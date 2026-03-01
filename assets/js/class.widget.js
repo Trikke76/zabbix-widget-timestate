@@ -64,8 +64,9 @@ window.CWidgetTimeState = class extends CWidget {
 
 			const labelEl = document.createElement('div');
 			labelEl.className = 'timestate__label';
-			labelEl.textContent = String(row.row_label || row.key_ || row.itemid || 'Row');
-			labelEl.title = labelEl.textContent;
+			const fullLabel = String(row.row_label || row.key_ || row.itemid || 'Row');
+			labelEl.textContent = this._shortRowLabel(fullLabel);
+			labelEl.title = fullLabel;
 
 			const lane = document.createElement('div');
 			lane.className = 'timestate__lane';
@@ -106,8 +107,14 @@ window.CWidgetTimeState = class extends CWidget {
 			table.appendChild(rowEl);
 		}
 
+		const axisRow = document.createElement('div');
+		axisRow.className = 'timestate__row timestate__axis-row';
+		const axisLabel = document.createElement('div');
+		axisLabel.className = 'timestate__label timestate__label--axis';
 		const axis = this._buildAxisTicks(ticks, timeFrom, range);
-		root.appendChild(axis);
+		axisRow.appendChild(axisLabel);
+		axisRow.appendChild(axis);
+		root.appendChild(axisRow);
 		root.appendChild(table);
 
 		if (legend.size <= 20) {
@@ -200,6 +207,15 @@ window.CWidgetTimeState = class extends CWidget {
 		const dd = String(date.getDate()).padStart(2, '0');
 		const mo = String(date.getMonth() + 1).padStart(2, '0');
 		return `${dd}/${mo}`;
+	}
+
+	_shortRowLabel(label) {
+		const text = String(label || '');
+		const idx = text.indexOf('::');
+		if (idx === -1) {
+			return text;
+		}
+		return text.slice(idx + 2).trim();
 	}
 
 	_escape(text) {

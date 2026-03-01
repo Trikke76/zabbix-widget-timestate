@@ -47,7 +47,7 @@
 
 .timestate__row {
 	display: grid;
-	grid-template-columns: minmax(180px, 280px) 1fr;
+	grid-template-columns: minmax(120px, 200px) 1fr;
 	gap: 10px;
 	align-items: center;
 }
@@ -61,11 +61,19 @@
 
 .timestate__lane {
 	position: relative;
-	height: 20px;
+	height: 40px;
 	border-radius: 6px;
 	background: #1f2b38;
 	overflow: hidden;
 	border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.timestate__axis-row {
+	margin-bottom: 4px;
+}
+
+.timestate__label--axis {
+	min-height: 1px;
 }
 
 .timestate__lane-grid {
