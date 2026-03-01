@@ -874,7 +874,14 @@
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-datasets{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
-			'.timestate-global-sidecar-floating{position:absolute;top:72px;right:10px;width:min(36%,420px);min-width:320px;min-height:320px;border-left:1px solid #3f4a58;padding:10px 12px 0 18px;box-sizing:border-box;background:rgba(20,26,34,.24);border-radius:4px;pointer-events:none;}',
+			'.timestate-global-panels-row>td{padding-top:8px;border-top:1px solid #3f4a58;}',
+			'.timestate-global-panels{display:grid;grid-template-columns:minmax(560px,1fr) minmax(340px,420px);column-gap:20px;align-items:stretch;}',
+			'.timestate-global-panel{border:1px solid #3f4a58;border-radius:4px;background:rgba(20,26,34,.22);padding:10px 12px;box-sizing:border-box;}',
+			'.timestate-global-panel--left table{width:100%;border-collapse:collapse;}',
+			'.timestate-global-panel--left tr:first-child td{padding-top:0;}',
+			'.timestate-global-panel--left td{padding-top:6px;padding-bottom:6px;}',
+			'.timestate-global-panel--left .table-forms-td-left{width:240px;}',
+			'.timestate-global-panel--right{border-left:1px solid #3f4a58;min-height:320px;padding-left:18px;}',
 			'.timestate-global-sidecar-title{font-size:13px;color:#cfd8e3;font-weight:600;margin:0 0 6px 0;}',
 			'.timestate-global-sidecar-note{font-size:12px;color:#9fb1c5;max-width:360px;line-height:1.35;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
@@ -990,33 +997,56 @@
 		anchor.parentNode.insertBefore(row, anchor);
 	}
 
-	function injectGlobalSidecar(anchorFieldName) {
+	function layoutGlobalPanels(fieldNames, anchorFieldName) {
 		const anchor = getFieldRow(anchorFieldName);
-		if (!anchor) {
+		if (!anchor || anchor.tagName !== 'TR' || !anchor.parentNode) {
 			return;
 		}
 
-		const existing = document.getElementById('timestate-global-sidecar-row');
+		const existing = document.getElementById('timestate-global-panels-row');
 		if (existing) {
 			existing.remove();
 		}
-		const dialog = anchor.closest('.overlay-dialogue, .overlay-dialogue.modal, .modal-dialogue, [role="dialog"]');
-		const body = dialog?.querySelector('.overlay-dialogue-body, .modal-dialogue-body, .overlay-dialogue-content');
-		if (!body) {
+
+		const rows = fieldNames
+			.map((fieldName) => getFieldRow(fieldName))
+			.filter((row) => !!row && row.tagName === 'TR');
+		if (rows.length === 0) {
 			return;
 		}
-		if (window.getComputedStyle(body).position === 'static') {
-			body.style.position = 'relative';
-		}
 
-		const panel = document.createElement('div');
-		panel.id = 'timestate-global-sidecar-row';
-		panel.className = 'timestate-global-sidecar-floating';
-		panel.innerHTML = [
+		const wrapperTr = document.createElement('tr');
+		wrapperTr.id = 'timestate-global-panels-row';
+		wrapperTr.className = 'timestate-global-panels-row';
+		const wrapperTd = document.createElement('td');
+		wrapperTd.colSpan = Math.max(2, anchor.querySelectorAll(':scope > td').length || 2);
+
+		const panels = document.createElement('div');
+		panels.className = 'timestate-global-panels';
+
+		const leftPanel = document.createElement('div');
+		leftPanel.className = 'timestate-global-panel timestate-global-panel--left';
+		const leftTable = document.createElement('table');
+		const leftBody = document.createElement('tbody');
+		leftTable.appendChild(leftBody);
+		leftPanel.appendChild(leftTable);
+
+		const rightPanel = document.createElement('div');
+		rightPanel.className = 'timestate-global-panel timestate-global-panel--right';
+		rightPanel.innerHTML = [
 			'<div class="timestate-global-sidecar-title">Global options</div>',
 			'<div class="timestate-global-sidecar-note">Reserved area for future global controls.</div>'
 		].join('');
-		body.appendChild(panel);
+
+		panels.appendChild(leftPanel);
+		panels.appendChild(rightPanel);
+		wrapperTd.appendChild(panels);
+		wrapperTr.appendChild(wrapperTd);
+
+		anchor.parentNode.insertBefore(wrapperTr, anchor);
+		rows.forEach((row) => {
+			leftBody.appendChild(row);
+		});
 	}
 
 	function hideLabelCellsByText(labels) {
@@ -1880,7 +1910,21 @@
 			});
 		});
 
-		injectGlobalSidecar('datasets_json');
+		layoutGlobalPanels([
+			'name',
+			'rf_rate',
+			'hostids',
+			'row_sort',
+			'row_group_mode',
+			'row_group_collapsed',
+			'axis_tick_step',
+			'axis_label_density',
+			'axis_grid_mode',
+			'legend_mode',
+			'legend_show_count',
+			'legend_show_duration',
+			'segment_label_mode'
+		], 'datasets_json');
 		showFieldRow('row_group_mode');
 		showFieldRow('row_group_collapsed');
 
