@@ -30,7 +30,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'merge_shorter_than' => (int) ($this->fields_values['merge_shorter_than'] ?? 0),
 				'null_gap_mode' => (int) ($this->fields_values['null_gap_mode'] ?? 0),
 				'null_gap_backfill_first' => (int) ($this->fields_values['null_gap_backfill_first'] ?? 0),
-				'row_sort' => $default_row_sort,
 				'state_map' => (string) ($this->fields_values['state_map'] ?? 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			]
 		);
@@ -64,8 +63,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$lookback_hours = (int) ($data_set['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS);
 			$dataset_time_from = $time_to - ($lookback_hours * 3600);
 			$global_time_from = min($global_time_from, $dataset_time_from);
-			$row_sort = (int) ($data_set['row_sort'] ?? self::DEFAULT_ROW_SORT);
-			$dataset_rows = [];
 
 			$items = $this->loadCandidateItems(
 				$hostids,
@@ -117,7 +114,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 					continue;
 				}
 
-				$dataset_rows[] = [
+				$rows[] = [
 					'row_label' => sprintf('%s :: %s', (string) $item['host_name'], (string) $item['name']),
 					'itemid' => $itemid,
 					'key_' => (string) $item['key_'],
@@ -132,12 +129,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 				];
 				$seen_itemids[$itemid] = true;
 			}
-
-			$this->sortRows($dataset_rows, $row_sort);
-			foreach ($dataset_rows as $row) {
-				$rows[] = $row;
-			}
 		}
+		$this->sortRows($rows, $default_row_sort);
 		foreach ($rows as &$row) {
 			unset($row['_sort_state'], $row['_sort_last_change']);
 		}
@@ -599,7 +592,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$max_rows = $this->clampInt((int) ($entry['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
 		$history_points = $this->clampInt((int) ($entry['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
 		$merge_shorter_than = $this->clampInt((int) ($entry['merge_shorter_than'] ?? 0), 0, 3600);
-		$row_sort = $this->clampInt((int) ($entry['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
 		$state_map_raw = trim((string) ($entry['state_map'] ?? ''));
 		if ($state_map_raw === '') {
 			$state_map_raw = 'value:0=OK|#2E7D32,value:1=Problem|#C62828';
@@ -626,7 +618,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'merge_shorter_than' => $merge_shorter_than,
 			'null_gap_mode' => ((int) ($entry['null_gap_mode'] ?? 0)) === 1 ? 1 : 0,
 			'null_gap_backfill_first' => ((int) ($entry['null_gap_backfill_first'] ?? 0)) === 1 ? 1 : 0,
-			'row_sort' => $row_sort,
 			'rules' => $rules !== [] ? $rules : $this->parseValueMappings('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 		];
 	}

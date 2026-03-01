@@ -884,6 +884,7 @@
 			'.timestate-map-builder--dataset{margin-top:0;padding:8px;}',
 			'.timestate-map-builder--dataset .timestate-map-builder-title{margin-bottom:6px;}',
 			'.timestate-map-builder--dataset .timestate-map-builder-help{margin-bottom:6px;}',
+			'.timestate-edit-wide .port24-pop{position:fixed!important;z-index:2147483000!important;}',
 			'@media (max-width: 1360px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
 			'@media (max-width: 980px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
@@ -906,6 +907,29 @@
 		const labelCell = row?.previousElementSibling;
 		if (labelCell && (labelCell.matches('td') || labelCell.classList.contains('table-forms-td-left'))) {
 			labelCell.style.display = 'none';
+		}
+	}
+
+	function hideLegacyLabelTexts(labels) {
+		const wanted = new Set(labels.map((v) => String(v).trim().toLowerCase()));
+		const candidates = document.querySelectorAll('label, td, th, .table-forms-td-left, .form-grid-label, .form-field-label, .field-label');
+
+		for (const el of candidates) {
+			const text = String(el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+			if (!wanted.has(text)) {
+				continue;
+			}
+
+			const row = el.closest('tr, .form-grid, .form-field, .field-row, li, .fields-group');
+			if (row) {
+				row.style.display = 'none';
+			}
+			el.style.display = 'none';
+
+			const sibling = el.nextElementSibling;
+			if (sibling && (sibling.matches('td') || sibling.classList.contains('table-forms-td-right') || sibling.classList.contains('table-forms-field'))) {
+				sibling.style.display = 'none';
+			}
 		}
 	}
 
@@ -1024,7 +1048,6 @@
 					merge_shorter_than: String(entry.merge_shorter_than || '0'),
 					null_gap_mode: String(entry.null_gap_mode ?? '0'),
 					null_gap_backfill_first: String(entry.null_gap_backfill_first ?? '0'),
-					row_sort: String(entry.row_sort ?? '0'),
 					state_map: String(entry.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 				}));
 		}
@@ -1046,7 +1069,6 @@
 			const merge_shorter_than = String(set.merge_shorter_than || '').trim();
 			const null_gap_mode = String(set.null_gap_mode ?? '0').trim();
 			const null_gap_backfill_first = String(set.null_gap_backfill_first ?? '0').trim();
-			const row_sort = String(set.row_sort ?? '0').trim();
 			const state_map = String(set.state_map || '').trim();
 			if (state_map === '') {
 				continue;
@@ -1062,7 +1084,6 @@
 				merge_shorter_than,
 				null_gap_mode,
 				null_gap_backfill_first,
-				row_sort,
 				state_map
 			});
 		}
@@ -1269,7 +1290,6 @@
 				merge_shorter_than: String(rowEl.querySelector('.timestate-dataset-mergeshort')?.value || '0'),
 				null_gap_mode: String(rowEl.querySelector('.timestate-dataset-nullgap')?.value || '0'),
 				null_gap_backfill_first: String(rowEl.querySelector('.timestate-dataset-backfill')?.value || '0'),
-				row_sort: String(rowEl.querySelector('.timestate-dataset-rowsort')?.value || '0'),
 				state_map: String(rowEl.querySelector('.timestate-dataset-map')?.value || '')
 			});
 		}
@@ -1288,7 +1308,6 @@
 			merge_shorter_than: '0',
 			null_gap_mode: '0',
 			null_gap_backfill_first: '0',
-			row_sort: '0',
 			state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 		};
 		const rowEl = document.createElement('div');
@@ -1308,7 +1327,6 @@
 				'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
 				'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
 				'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
-				'<label class="timestate-dataset-field"><span>Row sorting</span><select class="timestate-dataset-rowsort"><option value="0">Name (A-Z)</option><option value="1">Current status (Problem first)</option><option value="2">Last change (most recent first)</option></select></label>',
 				'<input type="hidden" class="timestate-dataset-map">',
 				'<div class="timestate-map-builder timestate-map-builder--dataset is-full">',
 					'<div class="timestate-map-builder-title">Value mappings</div>',
@@ -1329,7 +1347,6 @@
 		rowEl.querySelector('.timestate-dataset-mergeshort').value = String(set.merge_shorter_than || '0');
 		rowEl.querySelector('.timestate-dataset-nullgap').value = String(set.null_gap_mode ?? '0');
 		rowEl.querySelector('.timestate-dataset-backfill').value = String(set.null_gap_backfill_first ?? '0');
-		rowEl.querySelector('.timestate-dataset-rowsort').value = String(set.row_sort ?? '0');
 		const stateMapField = rowEl.querySelector('.timestate-dataset-map');
 		stateMapField.value = String(set.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828');
 		rowsWrap.appendChild(rowEl);
@@ -1423,7 +1440,6 @@
 				merge_shorter_than: String(findField('merge_shorter_than')?.value || '0'),
 				null_gap_mode: String(findField('null_gap_mode')?.value || '0'),
 				null_gap_backfill_first: String(findField('null_gap_backfill_first')?.value || '0'),
-				row_sort: String(findField('row_sort')?.value || '0'),
 				state_map: String(findField('state_map')?.value || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			}];
 		}
@@ -1443,7 +1459,6 @@
 				merge_shorter_than: '0',
 				null_gap_mode: '0',
 				null_gap_backfill_first: '0',
-				row_sort: '0',
 				state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 			});
 		});
@@ -1458,14 +1473,26 @@
 			'merge_shorter_than',
 			'null_gap_mode',
 			'null_gap_backfill_first',
-			'row_sort',
-			'state_map'
+			'state_map',
+			'datasets_json'
 		]) {
 			const field = findField(legacy);
 			if (field) {
 				hideFieldRow(legacy);
 			}
 		}
+
+		hideLegacyLabelTexts([
+			'lookback (hours)',
+			'max rows',
+			'history points per item',
+			'merge equal consecutive states',
+			'merge short segments (< seconds, 0 = off)',
+			'null-gap mode',
+			'backfill from first value',
+			'value mappings (comma separated)',
+			'data sets (json)'
+		]);
 
 		window.timestate_widget_form._dataSetBuilderBound = true;
 	}
