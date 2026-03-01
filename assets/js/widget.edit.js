@@ -851,17 +851,27 @@
 		style.textContent = [
 			'.overlay-dialogue.timestate-edit-wide,.overlay-dialogue.modal.timestate-edit-wide{width:min(1680px,96vw)!important;max-width:min(1680px,96vw)!important;}',
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
+			'.timestate-datasets{margin-top:8px;padding:10px;border:1px solid #3a4655;border-radius:6px;background:#141b24;}',
+			'.timestate-datasets-title{font-size:12px;font-weight:600;color:#d7e1ec;margin:0 0 8px 0;}',
+			'.timestate-datasets-help{font-size:11px;color:#9fb2c8;margin:0 0 8px 0;}',
+			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;}',
+			'.timestate-dataset-row{display:grid;grid-template-columns:minmax(140px,.7fr) minmax(180px,1fr) minmax(180px,1fr) minmax(320px,1.6fr) 28px;gap:8px;align-items:center;padding:8px;border:1px solid #2e3a4b;border-radius:6px;background:#0f1a29;}',
+			'.timestate-dataset-row input{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:5px 7px;box-sizing:border-box;}',
+			'.timestate-dataset-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}',
+			'.timestate-dataset-remove{width:28px;height:28px;border:1px solid #4b5a6d;background:#1a2431;color:#e7eef7;border-radius:6px;cursor:pointer;}',
 			'.timestate-map-builder{margin-top:8px;padding:10px;border:1px solid #3a4655;border-radius:6px;background:#141b24;}',
 			'.timestate-map-builder-title{font-size:12px;font-weight:600;color:#d7e1ec;margin:0 0 8px 0;}',
 			'.timestate-map-builder-help{font-size:11px;color:#9fb2c8;margin:0 0 8px 0;}',
 			'.timestate-map-rows{display:flex;flex-direction:column;gap:8px;}',
 			'.timestate-map-row{display:grid;grid-template-columns:120px minmax(240px,1.35fr) minmax(220px,1fr) 64px 28px;gap:8px;align-items:center;}',
+			'.timestate-map-color-wrap{display:flex;align-items:center;gap:8px;min-width:0;}',
+			'.timestate-map-color-wrap input{min-width:0;}',
 			'.timestate-map-row input,.timestate-map-row select{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-map-cond-range{display:grid;grid-template-columns:1fr 1fr;gap:6px;}',
 			'.timestate-map-remove{width:28px;height:28px;border:1px solid #4b5a6d;background:#1a2431;color:#e7eef7;border-radius:6px;cursor:pointer;}',
 			'.timestate-map-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}',
-			'@media (max-width: 1240px){.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
-			'@media (max-width: 980px){.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color{grid-column:1 / 2;}.timestate-map-row .port24-modern-picker{grid-column:2 / 3;justify-self:start;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
+			'@media (max-width: 1360px){.timestate-dataset-row{grid-template-columns:minmax(130px,.7fr) minmax(0,1fr) minmax(0,1fr) minmax(260px,1.3fr) 28px;}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
+			'@media (max-width: 980px){.timestate-dataset-row{grid-template-columns:minmax(0,1fr);}.timestate-dataset-row .timestate-dataset-remove{justify-self:end;}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
 		document.head.appendChild(style);
 	}
@@ -950,6 +960,46 @@
 		}
 
 		return rows;
+	}
+
+	function parseDataSets(raw) {
+		const text = String(raw || '').trim();
+		if (text === '') {
+			return [];
+		}
+
+		try {
+			const parsed = JSON.parse(text);
+			if (!Array.isArray(parsed)) {
+				return [];
+			}
+			return parsed
+				.filter((entry) => entry && typeof entry === 'object')
+				.map((entry) => ({
+					name: String(entry.name || ''),
+					item_key_search: String(entry.item_key_search || ''),
+					item_name_search: String(entry.item_name_search || ''),
+					state_map: String(entry.state_map || '')
+				}));
+		}
+		catch (_error) {
+			return [];
+		}
+	}
+
+	function serializeDataSets(dataSets) {
+		const rows = [];
+		for (const set of dataSets) {
+			const name = String(set.name || '').trim();
+			const item_key_search = String(set.item_key_search || '').trim();
+			const item_name_search = String(set.item_name_search || '').trim();
+			const state_map = String(set.state_map || '').trim();
+			if (state_map === '') {
+				continue;
+			}
+			rows.push({name, item_key_search, item_name_search, state_map});
+		}
+		return JSON.stringify(rows);
 	}
 
 	function serializeMappings(rows) {
@@ -1084,7 +1134,7 @@
 			'</select>',
 			'<div class="timestate-map-cond"></div>',
 			'<input type="text" class="timestate-map-label" placeholder="Display text">',
-			'<input type="text" class="timestate-map-color">',
+			'<div class="timestate-map-color-wrap"><input type="text" class="timestate-map-color"></div>',
 			'<button type="button" class="timestate-map-remove">×</button>'
 		].join('');
 
@@ -1112,8 +1162,9 @@
 				colorInput.dispatchEvent(new Event('change', {bubbles: true}));
 			}
 		});
-		if (colorInput && colorInput.parentNode) {
-			colorInput.parentNode.insertBefore(picker.element, colorInput.nextSibling);
+		const colorWrap = rowEl.querySelector('.timestate-map-color-wrap');
+		if (colorWrap) {
+			colorWrap.appendChild(picker.element);
 		}
 
 		const sync = () => {
@@ -1135,6 +1186,100 @@
 		});
 
 		sync();
+	}
+
+	function getDataSetsFromDom(rowsWrap) {
+		const rows = [];
+		for (const rowEl of rowsWrap.querySelectorAll('.timestate-dataset-row')) {
+			rows.push({
+				name: String(rowEl.querySelector('.timestate-dataset-name')?.value || ''),
+				item_key_search: String(rowEl.querySelector('.timestate-dataset-key')?.value || ''),
+				item_name_search: String(rowEl.querySelector('.timestate-dataset-namefilter')?.value || ''),
+				state_map: String(rowEl.querySelector('.timestate-dataset-map')?.value || '')
+			});
+		}
+		return rows;
+	}
+
+	function buildDataSetRow(rowsWrap, hiddenField, data = null) {
+		const set = data || {name: '', item_key_search: '', item_name_search: '', state_map: ''};
+		const rowEl = document.createElement('div');
+		rowEl.className = 'timestate-dataset-row';
+		rowEl.innerHTML = [
+			'<input type="text" class="timestate-dataset-name" placeholder="Data set name">',
+			'<input type="text" class="timestate-dataset-key" placeholder="Item key filter (*availability*)">',
+			'<input type="text" class="timestate-dataset-namefilter" placeholder="Item name filter (*agent*)">',
+			'<input type="text" class="timestate-dataset-map" placeholder="Mappings (same syntax as Value mappings)">',
+			'<button type="button" class="timestate-dataset-remove">×</button>'
+		].join('');
+
+		rowEl.querySelector('.timestate-dataset-name').value = String(set.name || '');
+		rowEl.querySelector('.timestate-dataset-key').value = String(set.item_key_search || '');
+		rowEl.querySelector('.timestate-dataset-namefilter').value = String(set.item_name_search || '');
+		rowEl.querySelector('.timestate-dataset-map').value = String(set.state_map || '');
+		rowsWrap.appendChild(rowEl);
+
+		const sync = () => {
+			const rows = getDataSetsFromDom(rowsWrap);
+			hiddenField.value = serializeDataSets(rows);
+			hiddenField.dispatchEvent(new Event('input', {bubbles: true}));
+			hiddenField.dispatchEvent(new Event('change', {bubbles: true}));
+		};
+
+		rowEl.addEventListener('input', sync);
+		rowEl.addEventListener('change', sync);
+		rowEl.querySelector('.timestate-dataset-remove')?.addEventListener('click', () => {
+			rowEl.remove();
+			sync();
+		});
+		sync();
+	}
+
+	function ensureDataSetBuilder() {
+		if (window.timestate_widget_form._dataSetBuilderBound) {
+			return;
+		}
+
+		const hiddenField = findField('datasets_json');
+		if (!hiddenField) {
+			return;
+		}
+
+		ensureValueMappingBuilderStyle();
+		const hiddenWrap = hiddenField.closest('.form-field');
+		if (!hiddenWrap || !hiddenWrap.parentNode) {
+			return;
+		}
+
+		const anchorField = findField('item_name_search') || findField('item_key_search');
+		const anchorWrap = anchorField ? anchorField.closest('.form-field') : null;
+		const insertAfter = anchorWrap && anchorWrap.parentNode ? anchorWrap : hiddenWrap;
+
+		const builder = document.createElement('div');
+		builder.id = 'timestate-datasets';
+		builder.className = 'timestate-datasets';
+		builder.innerHTML = [
+			'<div class="timestate-datasets-title">Data sets</div>',
+			'<div class="timestate-datasets-help">First matching data set is used per item (wildcards supported with * and ?). Leave empty to use global value mappings.</div>',
+			'<div class="timestate-dataset-rows"></div>',
+			'<button type="button" class="timestate-dataset-add">Add data set</button>'
+		].join('');
+
+		insertAfter.parentNode.insertBefore(builder, insertAfter.nextSibling);
+		hiddenWrap.style.display = 'none';
+
+		const rowsWrap = builder.querySelector('.timestate-dataset-rows');
+		const addBtn = builder.querySelector('.timestate-dataset-add');
+		const rows = parseDataSets(hiddenField.value);
+		for (const row of rows) {
+			buildDataSetRow(rowsWrap, hiddenField, row);
+		}
+
+		addBtn?.addEventListener('click', () => {
+			buildDataSetRow(rowsWrap, hiddenField, {name: '', item_key_search: '', item_name_search: '', state_map: ''});
+		});
+
+		window.timestate_widget_form._dataSetBuilderBound = true;
 	}
 
 	function ensureValueMappingBuilder() {
@@ -1170,15 +1315,8 @@
 		].join('');
 		stateWrap.parentNode.insertBefore(builder, stateWrap.nextSibling);
 
-		// Hide legacy raw field and legacy color fields to avoid confusion.
+		// Hide legacy raw field to avoid confusion.
 		stateWrap.style.display = 'none';
-		for (const legacy of ['state_0_color', 'state_1_color', 'state_unknown_color']) {
-			const field = findField(legacy);
-			const wrap = field ? field.closest('.form-field') : null;
-			if (wrap) {
-				wrap.style.display = 'none';
-			}
-		}
 
 		const rowsWrap = builder.querySelector('.timestate-map-rows');
 		const addBtn = builder.querySelector('.timestate-map-add');
@@ -1219,6 +1357,7 @@
 			observer.observe(document.body, {childList: true, subtree: true});
 
 			ensureItemPreviewBinding();
+			ensureDataSetBuilder();
 			ensureValueMappingBuilder();
 		}
 	};

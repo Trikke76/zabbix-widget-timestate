@@ -28,6 +28,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$backfill_first = ((int) ($this->fields_values['null_gap_backfill_first'] ?? 0)) === 1;
 		$row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
 		$value_mappings = $this->parseValueMappings((string) ($this->fields_values['state_map'] ?? ''));
+		$data_sets = $this->parseDataSets((string) ($this->fields_values['datasets_json'] ?? ''));
 		$base_colors = $this->buildBaseColorMap();
 		$time_to = time();
 		$time_from = $time_to - ($lookback_hours * 3600);
@@ -69,7 +70,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				$history ?: [],
 				$time_from,
 				$time_to,
-				$value_mappings,
+				$this->resolveItemMappings($item, $value_mappings, $data_sets),
 				$base_colors,
 				$merge_equal,
 				$connect_null_gaps,
@@ -524,6 +525,77 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return [$label, $color];
 	}
 
+	private function parseDataSets(string $raw): array {
+		$raw = trim($raw);
+		if ($raw === '') {
+			return [];
+		}
+
+		$data = json_decode($raw, true);
+		if (!is_array($data)) {
+			return [];
+		}
+
+		$sets = [];
+		foreach ($data as $entry) {
+			if (!is_array($entry)) {
+				continue;
+			}
+
+			$item_key_search = trim((string) ($entry['item_key_search'] ?? ''));
+			$item_name_search = trim((string) ($entry['item_name_search'] ?? ''));
+			$state_map_raw = trim((string) ($entry['state_map'] ?? ''));
+			$rules = $this->parseValueMappings($state_map_raw);
+			if ($rules === []) {
+				continue;
+			}
+
+			$sets[] = [
+				'name' => trim((string) ($entry['name'] ?? '')),
+				'item_key_search' => $item_key_search,
+				'item_name_search' => $item_name_search,
+				'rules' => $rules
+			];
+		}
+
+		return $sets;
+	}
+
+	private function resolveItemMappings(array $item, array $default_rules, array $data_sets): array {
+		if ($data_sets === []) {
+			return $default_rules;
+		}
+
+		$item_key = (string) ($item['key_'] ?? '');
+		$item_name = (string) ($item['name'] ?? '');
+
+		foreach ($data_sets as $set) {
+			$key_filter = (string) ($set['item_key_search'] ?? '');
+			$name_filter = (string) ($set['item_name_search'] ?? '');
+			$match_key = ($key_filter === '') || $this->wildcardMatch($key_filter, $item_key);
+			$match_name = ($name_filter === '') || $this->wildcardMatch($name_filter, $item_name);
+
+			if ($match_key && $match_name) {
+				$rules = $set['rules'] ?? [];
+				if (is_array($rules) && $rules !== []) {
+					return $rules;
+				}
+			}
+		}
+
+		return $default_rules;
+	}
+
+	private function wildcardMatch(string $pattern, string $subject): bool {
+		$pattern = trim($pattern);
+		if ($pattern === '') {
+			return true;
+		}
+
+		$regex = '/^' . str_replace(['\*', '\?'], ['.*', '.'], preg_quote($pattern, '/')) . '$/iu';
+		return preg_match($regex, $subject) === 1;
+	}
+
 	private function mapValue(string $raw_value, string $state, array $rules, array $base_colors): array {
 		$trimmed = trim($raw_value);
 		$lower = strtolower($trimmed);
@@ -602,23 +674,11 @@ class WidgetView extends CControllerDashboardWidgetView {
 	}
 
 	private function buildBaseColorMap(): array {
-		$c0 = $this->safeColor((string) ($this->fields_values['state_0_color'] ?? '#2E7D32'), '#2E7D32');
-		$c1 = $this->safeColor((string) ($this->fields_values['state_1_color'] ?? '#C62828'), '#C62828');
-		$cu = $this->safeColor((string) ($this->fields_values['state_unknown_color'] ?? '#607D8B'), '#607D8B');
-
 		return [
-			'0' => $c0,
-			'1' => $c1,
-			'unknown' => $cu
+			'0' => '#2E7D32',
+			'1' => '#C62828',
+			'unknown' => '#607D8B'
 		];
-	}
-
-	private function safeColor(string $value, string $fallback): string {
-		$value = trim($value);
-		if (preg_match('/^#[0-9A-Fa-f]{6}$/', $value) === 1) {
-			return strtoupper($value);
-		}
-		return strtoupper($fallback);
 	}
 
 	private function clampInt(int $value, int $min, int $max): int {

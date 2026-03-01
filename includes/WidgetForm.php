@@ -70,16 +70,8 @@ class WidgetForm extends CWidgetForm {
 					->setDefault('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			)
 			->addField(
-				(new CWidgetFieldTextBox('state_0_color', _('State "0" color')))
-					->setDefault('#2E7D32')
-			)
-			->addField(
-				(new CWidgetFieldTextBox('state_1_color', _('State "1" color')))
-					->setDefault('#C62828')
-			)
-			->addField(
-				(new CWidgetFieldTextBox('state_unknown_color', _('Unknown state color')))
-					->setDefault('#607D8B')
+				(new CWidgetFieldTextBox('datasets_json', _('Data sets (JSON)')))
+					->setDefault('')
 			);
 	}
 }
