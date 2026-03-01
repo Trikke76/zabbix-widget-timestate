@@ -42,6 +42,12 @@ State timeline widget inspired by Grafana State Timeline.
     [`.github/workflows/build-package.yml`](/Users/patrik/git/zabbix-widget-timestate/.github/workflows/build-package.yml)
     builds and uploads the package as an artifact.
 
+## Compatibility Note
+
+- Primary target: Zabbix 7.0.
+- Should also work on Zabbix 7.2 and 7.4.
+- 7.2 and 7.4 are currently not actively tested or maintained.
+
 ## Notes
 
 - Value mappings are configured per dataset via the edit-row builder (type + condition + text + color).
@@ -51,3 +57,5 @@ State timeline widget inspired by Grafana State Timeline.
   - `regex:/^ERR.*/=Error|#C62828`
   - `special:null=No data|#607D8B`
 - Color selection is done through the integrated swatch picker in mapping rows.
+
+Parts of this software were generated using Codex. We do not guarantee the total accuracy, security, or stability of the generated code.
