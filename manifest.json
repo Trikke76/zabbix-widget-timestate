@@ -4,7 +4,7 @@
   "type": "widget",
   "name": "Time State",
   "namespace": "TimeStateWidget",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "author": "Local",
   "description": "State timeline widget for Zabbix 7.x.",
   "actions": {
