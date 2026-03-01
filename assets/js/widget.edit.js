@@ -1410,7 +1410,7 @@
 				'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
 				'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
 				'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
-				'<div class="timestate-dataset-preview is-full"><div class="timestate-dataset-preview-title">Matched items</div><div class="timestate-dataset-preview-meta">Type at least 3 characters to preview selected items.</div><div class="timestate-dataset-preview-list"></div></div>',
+				'<div class="timestate-dataset-preview is-full"><div class="timestate-dataset-preview-title">Matched items</div><div class="timestate-dataset-preview-meta">Type to preview matching items (wildcards like * are supported).</div><div class="timestate-dataset-preview-list"></div></div>',
 				'<input type="hidden" class="timestate-dataset-map">',
 				'<div class="timestate-map-builder timestate-map-builder--dataset is-full">',
 					'<div class="timestate-map-builder-title">Value mappings</div>',
@@ -1470,8 +1470,8 @@
 			const filterValue = String(rowEl.querySelector('.timestate-dataset-filtervalue')?.value || '').trim();
 			const maxRows = Math.max(1, Math.min(200, Number(rowEl.querySelector('.timestate-dataset-maxrows')?.value || 20)));
 
-			if (filterValue.length < 3) {
-				renderDataSetPreview(previewBox, [], 'Type at least 3 characters to preview selected items.');
+			if (filterValue.length < 1) {
+				renderDataSetPreview(previewBox, [], 'Type to preview matching items.');
 				return;
 			}
 
