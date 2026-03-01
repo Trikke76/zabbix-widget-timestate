@@ -25,6 +25,9 @@ State timeline widget inspired by Grafana State Timeline.
   - `Connected` = extend neighboring states through missing intervals.
 - Fallback deterministic colors for unmapped state values.
 
+![image1.png](Widget)
+![image2.png](Edit widget)
+
 ## Install
 
 1. Place module directory in your Zabbix `ui/modules/` location.
