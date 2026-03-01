@@ -53,6 +53,12 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
+				(new CWidgetFieldSelect('null_gap_backfill_first', _('Backfill from first value'), [
+					0 => _('No'),
+					1 => _('Yes')
+				]))->setDefault(0)
+			)
+			->addField(
 				(new CWidgetFieldSelect('row_sort', _('Row sorting'), [
 					0 => _('Name (A-Z)'),
 					1 => _('Current status (Problem first)'),
@@ -60,8 +66,8 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
-				(new CWidgetFieldTextBox('state_map', _('State mapping (value=Label, comma separated)')))
-					->setDefault('0=OK,1=Problem')
+				(new CWidgetFieldTextBox('state_map', _('Value mappings (comma separated)')))
+					->setDefault('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			)
 			->addField(
 				(new CWidgetFieldTextBox('state_0_color', _('State "0" color')))

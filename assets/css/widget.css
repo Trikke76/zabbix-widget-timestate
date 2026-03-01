@@ -122,6 +122,23 @@
 	border-radius: 50%;
 }
 
+.timestate__tooltip {
+	position: fixed;
+	z-index: 100000;
+	display: none;
+	white-space: pre-line;
+	pointer-events: none;
+	max-width: 360px;
+	padding: 8px 10px;
+	font-size: 11px;
+	line-height: 1.3;
+	color: #d9e3ee;
+	background: #0f1722;
+	border: 1px solid #2e3c4d;
+	border-radius: 8px;
+	box-shadow: 0 10px 28px rgba(0,0,0,.45);
+}
+
 .timestate__selected {
 	margin-top: 8px;
 }

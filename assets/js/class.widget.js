@@ -57,6 +57,7 @@ window.CWidgetTimeState = class extends CWidget {
 		const legend = new Map();
 		const table = document.createElement('div');
 		table.className = 'timestate__table';
+		const tooltip = this._createTooltip(root);
 
 		for (const row of rows) {
 			const rowEl = document.createElement('div');
@@ -84,7 +85,8 @@ window.CWidgetTimeState = class extends CWidget {
 				const width = ((tTo - tFrom) / range) * 100;
 				const color = String(seg.color || '#607D8B');
 				const rawLabel = String(seg.label || seg.state || 'State');
-				const valueText = this._isNumericLabel(rawLabel) ? rawLabel : rawLabel;
+				const rawValue = String(seg.raw_value ?? '').trim();
+				const valueText = rawValue !== '' ? rawValue : rawLabel;
 				const legendLabel = this._isNumericLabel(rawLabel) ? 'Value' : rawLabel;
 
 				const block = document.createElement('span');
@@ -92,7 +94,9 @@ window.CWidgetTimeState = class extends CWidget {
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
 				block.style.background = color;
-				block.title = `Value: ${valueText}\nFrom: ${this._fmt(tFrom)}\nTo: ${this._fmt(tTo)}`;
+				const tooltipText = `Value: ${valueText}\nFrom: ${this._fmt(tFrom)}\nTo: ${this._fmt(tTo)}`;
+				block.title = tooltipText;
+				this._bindTooltip(block, tooltip, tooltipText);
 
 				lane.appendChild(block);
 
@@ -230,6 +234,51 @@ window.CWidgetTimeState = class extends CWidget {
 		const mo = String(date.getMonth() + 1).padStart(2, '0');
 		const yyyy = date.getFullYear();
 		return `${dd}/${mo}/${yyyy}`;
+	}
+
+	_createTooltip(root) {
+		const tip = document.createElement('div');
+		tip.className = 'timestate__tooltip';
+		root.appendChild(tip);
+		return tip;
+	}
+
+	_bindTooltip(block, tooltip, text) {
+		const show = (event) => {
+			tooltip.textContent = text;
+			tooltip.style.display = 'block';
+			this._positionTooltip(tooltip, event);
+		};
+		const move = (event) => {
+			if (tooltip.style.display !== 'block') {
+				return;
+			}
+			this._positionTooltip(tooltip, event);
+		};
+		const hide = () => {
+			tooltip.style.display = 'none';
+		};
+
+		block.addEventListener('mouseenter', show);
+		block.addEventListener('mousemove', move);
+		block.addEventListener('mouseleave', hide);
+	}
+
+	_positionTooltip(tooltip, event) {
+		const pad = 12;
+		const vw = window.innerWidth || 0;
+		const vh = window.innerHeight || 0;
+		const rect = tooltip.getBoundingClientRect();
+		let x = event.clientX + 14;
+		let y = event.clientY + 14;
+		if (x + rect.width + pad > vw) {
+			x = Math.max(pad, event.clientX - rect.width - 14);
+		}
+		if (y + rect.height + pad > vh) {
+			y = Math.max(pad, event.clientY - rect.height - 14);
+		}
+		tooltip.style.left = `${x}px`;
+		tooltip.style.top = `${y}px`;
 	}
 
 	_shortRowLabel(label) {

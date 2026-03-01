@@ -15,6 +15,7 @@ $form->addField(new CWidgetFieldTextBoxView($data['fields']['history_points']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['merge_equal_states']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['merge_shorter_than']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['null_gap_mode']));
+$form->addField(new CWidgetFieldSelectView($data['fields']['null_gap_backfill_first']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['row_sort']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['state_map']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['state_0_color']));

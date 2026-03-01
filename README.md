@@ -9,9 +9,11 @@ State timeline widget inspired by Grafana State Timeline.
 - Live matched-items preview in widget edit form for wildcard filters (for example `*cpu`).
 - Time range based on configurable lookback hours.
 - Segment merging for equal consecutive states.
+- Merge short segments threshold to suppress brief flapping states.
 - Null-gap mode:
   - `Disconnected` = show no-data gaps for missing intervals.
   - `Connected` = extend neighboring states through missing intervals.
+- Optional backfill from first value when connected gap mode is enabled.
 - Per-state color support (`0`, `1`, unknown) with edit-form color picker.
 - Fallback deterministic colors for other state values.
 
@@ -34,6 +36,9 @@ State timeline widget inspired by Grafana State Timeline.
 
 ## Notes
 
-- State mapping accepts lines like:
-  - `0=OK,1=Problem,2=Warning`
+- Value mappings (comma separated) support:
+  - `value:0=OK|#2E7D32`
+  - `range:80..100=High|#C62828`
+  - `regex:/^ERR.*/=Error|#C62828`
+  - `special:null=No data|#607D8B`
 - Color picker is attached to `*_color` fields in widget edit form.

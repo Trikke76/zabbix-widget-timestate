@@ -25,8 +25,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$merge_shorter_than = $this->clampInt((int) ($this->fields_values['merge_shorter_than'] ?? 0), 0, 3600);
 		$null_gap_mode = (int) ($this->fields_values['null_gap_mode'] ?? 0);
 		$connect_null_gaps = ($null_gap_mode === 1);
+		$backfill_first = ((int) ($this->fields_values['null_gap_backfill_first'] ?? 0)) === 1;
 		$row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
-		$state_map = $this->parseStateMap((string) ($this->fields_values['state_map'] ?? ''));
+		$value_mappings = $this->parseValueMappings((string) ($this->fields_values['state_map'] ?? ''));
 		$base_colors = $this->buildBaseColorMap();
 		$time_to = time();
 		$time_from = $time_to - ($lookback_hours * 3600);
@@ -68,11 +69,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 				$history ?: [],
 				$time_from,
 				$time_to,
-				$state_map,
+				$value_mappings,
 				$base_colors,
 				$merge_equal,
 				$connect_null_gaps,
-				$merge_shorter_than
+				$merge_shorter_than,
+				$backfill_first
 			);
 			if ($segments === []) {
 				continue;
@@ -233,17 +235,19 @@ class WidgetView extends CControllerDashboardWidgetView {
 		array $history,
 		int $time_from,
 		int $time_to,
-		array $state_map,
+		array $value_mappings,
 		array $base_colors,
 		bool $merge_equal,
 		bool $connect_null_gaps,
-		int $merge_shorter_than
+		int $merge_shorter_than,
+		bool $backfill_first
 	): array {
 		if ($history === []) {
 			return [[
 				't_from' => $time_from,
 				't_to' => $time_to,
 				'state' => 'unknown',
+				'raw_value' => '',
 				'label' => _('No data'),
 				'color' => $base_colors['unknown']
 			]];
@@ -285,18 +289,22 @@ class WidgetView extends CControllerDashboardWidgetView {
 						't_from' => $cursor,
 						't_to' => $clock,
 						'state' => 'unknown',
+						'raw_value' => '',
 						'label' => _('No data'),
 						'color' => $base_colors['unknown']
 					];
 				}
 			}
 
+			$mapped = $this->mapValue($value, $state, $value_mappings, $base_colors);
+
 			$segment = [
 				't_from' => $clock,
 				't_to' => $segment_end,
-				'state' => $state,
-				'label' => $state_map[$state] ?? $state,
-				'color' => $this->resolveStateColor($state, $base_colors)
+				'state' => $mapped['state'],
+				'raw_value' => $value,
+				'label' => $mapped['label'],
+				'color' => $mapped['color']
 			];
 
 			if ($merge_equal && $last_state !== null && $this->canMerge($last_state, $segment)) {
@@ -318,6 +326,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 					't_from' => $cursor,
 					't_to' => $time_to,
 					'state' => 'unknown',
+					'raw_value' => '',
 					'label' => _('No data'),
 					'color' => $base_colors['unknown']
 				];
@@ -330,6 +339,28 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 		if ($merge_shorter_than > 0) {
 			$segments = $this->mergeShortSegments($segments, $merge_shorter_than);
+		}
+		if ($backfill_first) {
+			$segments = $this->applyLeadingBackfill($segments);
+		}
+
+		return $segments;
+	}
+
+	private function applyLeadingBackfill(array $segments): array {
+		if (count($segments) < 2) {
+			return $segments;
+		}
+
+		$first = $segments[0];
+		$next = $segments[1];
+		$is_leading_unknown = (string) ($first['state'] ?? '') === 'unknown';
+		$is_next_known = (string) ($next['state'] ?? '') !== 'unknown';
+		$is_contiguous = (int) ($first['t_to'] ?? 0) === (int) ($next['t_from'] ?? 0);
+
+		if ($is_leading_unknown && $is_next_known && $is_contiguous) {
+			$segments[1]['t_from'] = $segments[0]['t_from'];
+			array_shift($segments);
 		}
 
 		return $segments;
@@ -430,8 +461,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 			&& (int) ($a['t_to'] ?? 0) === (int) ($b['t_from'] ?? 0);
 	}
 
-	private function parseStateMap(string $raw): array {
-		$map = [];
+	private function parseValueMappings(string $raw): array {
+		$rules = [];
 		$normalized = str_replace(',', "\n", $raw);
 		$lines = preg_split('/\r?\n/', $normalized) ?: [];
 
@@ -440,14 +471,118 @@ class WidgetView extends CControllerDashboardWidgetView {
 			if ($line === '' || strpos($line, '=') === false) {
 				continue;
 			}
-			[$key, $label] = array_map('trim', explode('=', $line, 2));
-			if ($key === '' || $label === '') {
+			[$condition, $display] = array_map('trim', explode('=', $line, 2));
+			if ($condition === '' || $display === '') {
 				continue;
 			}
-			$map[$key] = $label;
+
+			[$label, $color] = $this->parseMappingDisplay($display);
+			$rule = [
+				'type' => 'value',
+				'label' => $label,
+				'color' => $color
+			];
+
+			if (str_starts_with($condition, 'value:')) {
+				$rule['type'] = 'value';
+				$rule['value'] = trim(substr($condition, 6));
+			}
+			elseif (str_starts_with($condition, 'range:')) {
+				$range = trim(substr($condition, 6));
+				[$min, $max] = array_map('trim', explode('..', $range, 2) + [null, null]);
+				$rule['type'] = 'range';
+				$rule['min'] = ($min === '' || $min === null) ? null : (float) $min;
+				$rule['max'] = ($max === '' || $max === null) ? null : (float) $max;
+			}
+			elseif (str_starts_with($condition, 'regex:')) {
+				$rule['type'] = 'regex';
+				$rule['pattern'] = trim(substr($condition, 6));
+			}
+			elseif (str_starts_with($condition, 'special:')) {
+				$rule['type'] = 'special';
+				$rule['special'] = strtolower(trim(substr($condition, 8)));
+			}
+			else {
+				$rule['type'] = 'value';
+				$rule['value'] = $condition;
+			}
+
+			$rules[] = $rule;
 		}
 
-		return $map;
+		return $rules;
+	}
+
+	private function parseMappingDisplay(string $display): array {
+		$parts = array_map('trim', explode('|', $display, 2));
+		$label = $parts[0] !== '' ? $parts[0] : $display;
+		$color = null;
+		if (isset($parts[1]) && preg_match('/^#[0-9A-Fa-f]{6}$/', $parts[1]) === 1) {
+			$color = strtoupper($parts[1]);
+		}
+
+		return [$label, $color];
+	}
+
+	private function mapValue(string $raw_value, string $state, array $rules, array $base_colors): array {
+		$trimmed = trim($raw_value);
+		$lower = strtolower($trimmed);
+
+		foreach ($rules as $rule) {
+			$type = (string) ($rule['type'] ?? 'value');
+			$matched = false;
+
+			if ($type === 'value') {
+				$v = (string) ($rule['value'] ?? '');
+				$matched = ($state === $v || $trimmed === $v);
+			}
+			elseif ($type === 'range') {
+				if (is_numeric($state)) {
+					$num = (float) $state;
+					$min = $rule['min'] ?? null;
+					$max = $rule['max'] ?? null;
+					$ok_min = ($min === null) || $num >= (float) $min;
+					$ok_max = ($max === null) || $num <= (float) $max;
+					$matched = $ok_min && $ok_max;
+				}
+			}
+			elseif ($type === 'regex') {
+				$pattern = (string) ($rule['pattern'] ?? '');
+				if ($pattern !== '') {
+					$regex = $pattern;
+					if (@preg_match($regex, '') === false) {
+						$regex = '/' . str_replace('/', '\/', $pattern) . '/i';
+					}
+					$matched = @preg_match($regex, $trimmed) === 1 || @preg_match($regex, $state) === 1;
+				}
+			}
+			elseif ($type === 'special') {
+				$special = (string) ($rule['special'] ?? '');
+				$matched = match ($special) {
+					'null' => $lower === 'null',
+					'nan' => $lower === 'nan',
+					'true' => $lower === 'true',
+					'false' => $lower === 'false',
+					'empty' => $trimmed === '',
+					'unknown' => $state === 'unknown',
+					default => false
+				};
+			}
+
+			if ($matched) {
+				return [
+					'state' => $state,
+					'label' => (string) ($rule['label'] ?? $state),
+					'color' => (string) (($rule['color'] ?? '') !== '' ? $rule['color'] : $this->resolveStateColor($state, $base_colors))
+				];
+			}
+		}
+
+		return [
+			'state' => $state,
+			'label' => $state,
+			'color' => $this->resolveStateColor($state, $base_colors)
+		];
 	}
 
 	private function resolveStateColor(string $state, array $base_colors): string {
