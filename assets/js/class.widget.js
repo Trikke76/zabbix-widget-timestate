@@ -84,21 +84,20 @@ window.CWidgetTimeState = class extends CWidget {
 				const width = ((tTo - tFrom) / range) * 100;
 				const color = String(seg.color || '#607D8B');
 				const rawLabel = String(seg.label || seg.state || 'State');
-				const label = this._isNumericLabel(rawLabel)
-					? `itemid:${String(row.itemid || '-')}`
-					: rawLabel;
+				const valueText = this._isNumericLabel(rawLabel) ? rawLabel : rawLabel;
+				const legendLabel = this._isNumericLabel(rawLabel) ? 'Value' : rawLabel;
 
 				const block = document.createElement('span');
 				block.className = 'timestate__segment';
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
 				block.style.background = color;
-				block.title = `${label} (${this._fmt(tFrom)} - ${this._fmt(tTo)})`;
+				block.title = `Value: ${valueText}\nFrom: ${this._fmt(tFrom)}\nTo: ${this._fmt(tTo)}`;
 
 				lane.appendChild(block);
 
-				if (!legend.has(label)) {
-					legend.set(label, color);
+				if (!legend.has(legendLabel)) {
+					legend.set(legendLabel, color);
 				}
 			}
 

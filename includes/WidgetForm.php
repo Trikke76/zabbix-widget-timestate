@@ -43,6 +43,10 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(1)
 			)
 			->addField(
+				(new CWidgetFieldTextBox('merge_shorter_than', _('Merge short segments (< seconds, 0 = off)')))
+					->setDefault('0')
+			)
+			->addField(
 				(new CWidgetFieldSelect('null_gap_mode', _('Null-gap mode'), [
 					0 => _('Disconnected'),
 					1 => _('Connected')

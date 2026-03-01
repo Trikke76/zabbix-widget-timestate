@@ -22,6 +22,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$max_rows = $this->clampInt((int) ($this->fields_values['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
 		$history_points = $this->clampInt((int) ($this->fields_values['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
 		$merge_equal = ((int) ($this->fields_values['merge_equal_states'] ?? 1)) === 1;
+		$merge_shorter_than = $this->clampInt((int) ($this->fields_values['merge_shorter_than'] ?? 0), 0, 3600);
 		$null_gap_mode = (int) ($this->fields_values['null_gap_mode'] ?? 0);
 		$connect_null_gaps = ($null_gap_mode === 1);
 		$row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
@@ -70,7 +71,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 				$state_map,
 				$base_colors,
 				$merge_equal,
-				$connect_null_gaps
+				$connect_null_gaps,
+				$merge_shorter_than
 			);
 			if ($segments === []) {
 				continue;
@@ -234,7 +236,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 		array $state_map,
 		array $base_colors,
 		bool $merge_equal,
-		bool $connect_null_gaps
+		bool $connect_null_gaps,
+		int $merge_shorter_than
 	): array {
 		if ($history === []) {
 			return [[
@@ -321,9 +324,57 @@ class WidgetView extends CControllerDashboardWidgetView {
 			}
 		}
 
-		return array_values(array_filter($segments, static function(array $segment): bool {
+		$segments = array_values(array_filter($segments, static function(array $segment): bool {
 			return ($segment['t_to'] ?? 0) > ($segment['t_from'] ?? 0);
 		}));
+
+		if ($merge_shorter_than > 0) {
+			$segments = $this->mergeShortSegments($segments, $merge_shorter_than);
+		}
+
+		return $segments;
+	}
+
+	private function mergeShortSegments(array $segments, int $threshold_seconds): array {
+		if (count($segments) < 3 || $threshold_seconds <= 0) {
+			return $segments;
+		}
+
+		$changed = true;
+		while ($changed) {
+			$changed = false;
+			$len = count($segments);
+			if ($len < 3) {
+				break;
+			}
+
+			for ($i = 1; $i < $len - 1; $i++) {
+				$curr = $segments[$i];
+				$duration = (int) ($curr['t_to'] ?? 0) - (int) ($curr['t_from'] ?? 0);
+				if ($duration <= 0 || $duration >= $threshold_seconds) {
+					continue;
+				}
+
+				$prev = $segments[$i - 1];
+				$next = $segments[$i + 1];
+
+				$same_neighbors = (string) ($prev['state'] ?? '') === (string) ($next['state'] ?? '')
+					&& (string) ($prev['color'] ?? '') === (string) ($next['color'] ?? '');
+				$contiguous = (int) ($prev['t_to'] ?? 0) === (int) ($curr['t_from'] ?? 0)
+					&& (int) ($curr['t_to'] ?? 0) === (int) ($next['t_from'] ?? 0);
+
+				if (!$same_neighbors || !$contiguous) {
+					continue;
+				}
+
+				$segments[$i - 1]['t_to'] = $next['t_to'];
+				array_splice($segments, $i, 2);
+				$changed = true;
+				break;
+			}
+		}
+
+		return $segments;
 	}
 
 	private function estimateSampleInterval(array $history, int $time_from, int $time_to): int {
