@@ -1852,6 +1852,8 @@
 		moveFieldRowBefore('row_sort', 'item_key_search');
 		moveFieldRowBefore('row_group_mode', 'item_key_search');
 		moveFieldRowBefore('row_group_collapsed', 'item_key_search');
+		moveFieldRowBefore('axis_tick_step', 'item_key_search');
+		moveFieldRowBefore('axis_label_density', 'item_key_search');
 		moveFieldRowBefore('legend_mode', 'item_key_search');
 		moveFieldRowBefore('legend_show_count', 'item_key_search');
 		moveFieldRowBefore('legend_show_duration', 'item_key_search');

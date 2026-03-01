@@ -52,7 +52,9 @@ window.CWidgetTimeState = class extends CWidget {
 		const timeFrom = Number(model.time_from || 0);
 		const timeTo = Number(model.time_to || 0);
 		const range = Math.max(1, timeTo - timeFrom);
-		const ticks = this._buildTicks(timeFrom, timeTo, 8);
+		const axisTickStep = Math.max(0, Number(model.axis_tick_step ?? 0));
+		const axisLabelDensity = Math.max(0, Math.min(2, Number(model.axis_label_density ?? 1)));
+		const ticks = this._buildTicks(timeFrom, timeTo, this._targetTickCount(axisLabelDensity), axisTickStep);
 		const legendMode = Math.max(0, Math.min(2, Number(model.legend_mode ?? 0)));
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
@@ -178,7 +180,7 @@ window.CWidgetTimeState = class extends CWidget {
 		axisLabel.className = 'timestate__label timestate__label--axis';
 		axisLabel.textContent = this._fmtDateOnly(timeFrom);
 		axisLabel.title = this._fmt(timeFrom);
-		const axis = this._buildAxisTicks(ticks, timeFrom, range);
+		const axis = this._buildAxisTicks(ticks, timeFrom, range, axisLabelDensity);
 		axisRow.appendChild(axisLabel);
 		axisRow.appendChild(axis);
 		root.appendChild(axisRow);
@@ -254,7 +256,7 @@ window.CWidgetTimeState = class extends CWidget {
 		return wrap;
 	}
 
-	_buildTicks(timeFrom, timeTo, targetCount) {
+	_buildTicks(timeFrom, timeTo, targetCount, forcedStep = 0) {
 		const range = Math.max(1, timeTo - timeFrom);
 		const desired = range / Math.max(2, targetCount);
 		const steps = [
@@ -264,10 +266,15 @@ window.CWidgetTimeState = class extends CWidget {
 		];
 
 		let step = steps[steps.length - 1];
-		for (const candidate of steps) {
-			if (candidate >= desired) {
-				step = candidate;
-				break;
+		if (forcedStep > 0) {
+			step = forcedStep;
+		}
+		else {
+			for (const candidate of steps) {
+				if (candidate >= desired) {
+					step = candidate;
+					break;
+				}
 			}
 		}
 
@@ -284,10 +291,11 @@ window.CWidgetTimeState = class extends CWidget {
 		return {items: ticks, step};
 	}
 
-	_buildAxisTicks(ticks, timeFrom, range) {
+	_buildAxisTicks(ticks, timeFrom, range, density = 1) {
 		const axis = document.createElement('div');
 		axis.className = 'timestate__axis-detailed';
 		let prevLeft = -100;
+		const settings = this._axisDensitySettings(density);
 
 		const nodes = [];
 		for (const tick of ticks.items) {
@@ -306,10 +314,10 @@ window.CWidgetTimeState = class extends CWidget {
 				continue;
 			}
 
-			if (node.left < 6 || node.left > 94) {
+			if (node.left < settings.edgeInset || node.left > (100 - settings.edgeInset)) {
 				continue;
 			}
-			if (node.left - prevLeft < 8) {
+			if (node.left - prevLeft < settings.minDelta) {
 				continue;
 			}
 			kept.push(node);
@@ -322,9 +330,9 @@ window.CWidgetTimeState = class extends CWidget {
 		let lastLeft = -100;
 		for (const node of kept) {
 			const label = this._fmtTick(node.ts, ticks.step);
-			const approxWidthPct = Math.max(4, label.length * 0.9);
+			const approxWidthPct = Math.max(4, label.length * settings.widthFactor);
 			if (lastLeft > -100) {
-				const minGap = (lastLabelLen / 2) + (approxWidthPct / 2) + 0.8;
+				const minGap = (lastLabelLen / 2) + (approxWidthPct / 2) + settings.overlapPad;
 				if (node.left - lastLeft < minGap) {
 					// Prefer keeping edge labels over middle labels.
 					if (node.edge) {
@@ -351,6 +359,26 @@ window.CWidgetTimeState = class extends CWidget {
 		}
 
 		return axis;
+	}
+
+	_targetTickCount(density) {
+		if (density === 0) {
+			return 6;
+		}
+		if (density === 2) {
+			return 12;
+		}
+		return 8;
+	}
+
+	_axisDensitySettings(density) {
+		if (density === 0) {
+			return {edgeInset: 9, minDelta: 12, widthFactor: 1.0, overlapPad: 1.6};
+		}
+		if (density === 2) {
+			return {edgeInset: 3, minDelta: 5, widthFactor: 0.72, overlapPad: 0.2};
+		}
+		return {edgeInset: 6, minDelta: 8, widthFactor: 0.9, overlapPad: 0.8};
 	}
 
 	_addLaneGrid(lane, ticks, timeFrom, range) {
