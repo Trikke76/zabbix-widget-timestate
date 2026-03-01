@@ -886,6 +886,12 @@
 			'.timestate-dataset-field{display:flex;flex-direction:column;gap:4px;min-width:0;}',
 			'.timestate-dataset-field > span{font-size:12px;color:#d8d8d8;white-space:normal;word-break:break-word;}',
 			'.timestate-dataset-field.is-full{grid-column:1 / -1;}',
+			'.timestate-dataset-preview{padding:8px;border:1px solid #3a3a3a;border-radius:4px;background:#242424;}',
+			'.timestate-dataset-preview-title{font-size:12px;font-weight:600;color:#e3e3e3;margin:0 0 4px 0;}',
+			'.timestate-dataset-preview-meta{font-size:11px;color:#b9c0c7;margin:0 0 6px 0;}',
+			'.timestate-dataset-preview-list{display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow:auto;}',
+			'.timestate-dataset-preview-chip{display:inline-block;padding:2px 8px;border-radius:999px;background:#1f1f1f;border:1px solid #4a4a4a;color:#e5e5e5;font-size:11px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+			'.timestate-dataset-preview-empty{font-size:11px;color:#b9c0c7;}',
 			'.timestate-dataset-row input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-dataset-row textarea{width:100%;min-height:58px;resize:vertical;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:6px 7px;box-sizing:border-box;font:inherit;}',
 			'.timestate-dataset-row select{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
@@ -1342,6 +1348,37 @@
 		return rows;
 	}
 
+	function renderDataSetPreview(box, items, meta) {
+		if (!box) {
+			return;
+		}
+
+		const metaEl = box.querySelector('.timestate-dataset-preview-meta');
+		const listEl = box.querySelector('.timestate-dataset-preview-list');
+		if (!metaEl || !listEl) {
+			return;
+		}
+
+		metaEl.textContent = meta;
+		listEl.innerHTML = '';
+
+		if (!Array.isArray(items) || items.length === 0) {
+			const empty = document.createElement('div');
+			empty.className = 'timestate-dataset-preview-empty';
+			empty.textContent = 'No matching items.';
+			listEl.appendChild(empty);
+			return;
+		}
+
+		for (const item of items) {
+			const chip = document.createElement('span');
+			chip.className = 'timestate-dataset-preview-chip';
+			chip.textContent = String(item.label || '');
+			chip.title = chip.textContent;
+			listEl.appendChild(chip);
+		}
+	}
+
 	function buildDataSetRow(rowsWrap, hiddenField, data = null) {
 		const set = data || {
 			name: '',
@@ -1373,6 +1410,7 @@
 				'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
 				'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
 				'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
+				'<div class="timestate-dataset-preview is-full"><div class="timestate-dataset-preview-title">Matched items</div><div class="timestate-dataset-preview-meta">Type at least 3 characters to preview selected items.</div><div class="timestate-dataset-preview-list"></div></div>',
 				'<input type="hidden" class="timestate-dataset-map">',
 				'<div class="timestate-map-builder timestate-map-builder--dataset is-full">',
 					'<div class="timestate-map-builder-title">Value mappings</div>',
@@ -1399,6 +1437,7 @@
 
 		const titleEl = rowEl.querySelector('.timestate-dataset-title');
 		const headNameEl = rowEl.querySelector('.timestate-dataset-name');
+		const previewBox = rowEl.querySelector('.timestate-dataset-preview');
 		const mapBuilder = rowEl.querySelector('.timestate-map-builder--dataset');
 		const mapRowsWrap = mapBuilder ? mapBuilder.querySelector('.timestate-map-rows') : null;
 		const mapAddBtn = mapBuilder ? mapBuilder.querySelector('.timestate-map-add') : null;
@@ -1418,6 +1457,59 @@
 			});
 		}
 
+		let previewTimer = null;
+		let previewSeq = 0;
+		const refreshPreview = async () => {
+			const hostids = getHostIds();
+			if (hostids.length === 0) {
+				renderDataSetPreview(previewBox, [], 'Select at least one host to preview items.');
+				return;
+			}
+
+			const filterType = String(rowEl.querySelector('.timestate-dataset-filtertype')?.value || 'key');
+			const filterValue = String(rowEl.querySelector('.timestate-dataset-filtervalue')?.value || '').trim();
+			const maxRows = Math.max(1, Math.min(200, Number(rowEl.querySelector('.timestate-dataset-maxrows')?.value || 20)));
+
+			if (filterValue.length < 3) {
+				renderDataSetPreview(previewBox, [], 'Type at least 3 characters to preview selected items.');
+				return;
+			}
+
+			const seq = ++previewSeq;
+			const params = new URLSearchParams({
+				action: 'widget.timestate.items',
+				output: 'ajax',
+				hostids_csv: hostids.join(','),
+				item_key_search: filterType === 'key' ? filterValue : '',
+				item_name_search: filterType === 'name' ? filterValue : '',
+				max_rows: String(maxRows)
+			});
+
+			try {
+				const response = await fetch(`zabbix.php?${params.toString()}`, {
+					method: 'GET',
+					credentials: 'same-origin',
+					headers: {'X-Requested-With': 'XMLHttpRequest'}
+				});
+				const text = await response.text();
+				if (seq !== previewSeq) {
+					return;
+				}
+				const items = parseItemsPayload(text).items || [];
+				renderDataSetPreview(previewBox, items, `Previewing ${items.length} matched item(s).`);
+			}
+			catch (_error) {
+				renderDataSetPreview(previewBox, [], 'Unable to load preview right now.');
+			}
+		};
+
+		const schedulePreview = () => {
+			if (previewTimer !== null) {
+				window.clearTimeout(previewTimer);
+			}
+			previewTimer = window.setTimeout(refreshPreview, 250);
+		};
+
 		const sync = () => {
 			const title = String(titleEl?.value || '').trim();
 			if (headNameEl) {
@@ -1431,11 +1523,15 @@
 
 		rowEl.addEventListener('input', sync);
 		rowEl.addEventListener('change', sync);
+		rowEl.querySelector('.timestate-dataset-filtertype')?.addEventListener('change', schedulePreview);
+		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('input', schedulePreview);
+		rowEl.querySelector('.timestate-dataset-maxrows')?.addEventListener('input', schedulePreview);
 		rowEl.querySelector('.timestate-dataset-remove')?.addEventListener('click', () => {
 			rowEl.remove();
 			sync();
 		});
 		sync();
+		schedulePreview();
 	}
 
 	function ensureDataSetBuilder() {
