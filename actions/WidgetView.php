@@ -13,12 +13,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 	private const DEFAULT_MAX_ROWS = 20;
 	private const DEFAULT_HISTORY_POINTS = 500;
 	private const DEFAULT_ROW_SORT = 0;
+	private const DEFAULT_ROW_GROUP_MODE = 0;
 	private const DEFAULT_LEGEND_MODE = 0;
 
 	protected function doAction(): void {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
 		$default_lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$default_row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
+		$row_group_mode = $this->clampInt((int) ($this->fields_values['row_group_mode'] ?? self::DEFAULT_ROW_GROUP_MODE), 0, 2);
+		$row_group_collapsed = ((int) ($this->fields_values['row_group_collapsed'] ?? 0)) === 1 ? 1 : 0;
 		$legend_mode = $this->clampInt((int) ($this->fields_values['legend_mode'] ?? self::DEFAULT_LEGEND_MODE), 0, 2);
 		$legend_show_count = ((int) ($this->fields_values['legend_show_count'] ?? 1)) === 1 ? 1 : 0;
 		$legend_show_duration = ((int) ($this->fields_values['legend_show_duration'] ?? 1)) === 1 ? 1 : 0;
@@ -49,6 +52,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'time_from' => $time_from,
 				'time_to' => $time_to,
 				'legend_mode' => $legend_mode,
+				'row_group_mode' => $row_group_mode,
+				'row_group_collapsed' => $row_group_collapsed,
 				'legend_show_count' => $legend_show_count,
 				'legend_show_duration' => $legend_show_duration,
 				'segment_label_mode' => $segment_label_mode,
@@ -64,9 +69,13 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$selected_items = [];
 		$global_time_from = $time_from;
 
-		foreach ($data_sets as $data_set) {
+		foreach ($data_sets as $data_set_idx => $data_set) {
 			$filter_type = (string) ($data_set['filter_type'] ?? 'key');
 			$filter_value = (string) ($data_set['filter_value'] ?? '');
+			$data_set_name = trim((string) ($data_set['name'] ?? ''));
+			if ($data_set_name === '') {
+				$data_set_name = 'Data set #'.((int) $data_set_idx + 1);
+			}
 			$filter_exact = ((int) ($data_set['filter_exact'] ?? 0)) === 1;
 			$item_key_search = $filter_type === 'name' ? '' : $filter_value;
 			$item_name_search = $filter_type === 'name' ? $filter_value : '';
@@ -127,6 +136,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 				$rows[] = [
 					'row_label' => sprintf('%s :: %s', (string) $item['host_name'], (string) $item['name']),
+					'host_name' => (string) $item['host_name'],
+					'dataset_name' => $data_set_name,
 					'itemid' => $itemid,
 					'key_' => (string) $item['key_'],
 					'segments' => $segments,
@@ -153,6 +164,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'selected_items' => $this->buildSelectedItemPreview($selected_items),
 			'time_from' => $global_time_from,
 			'time_to' => $time_to,
+			'row_group_mode' => $row_group_mode,
+			'row_group_collapsed' => $row_group_collapsed,
 			'legend_mode' => $legend_mode,
 			'legend_show_count' => $legend_show_count,
 			'legend_show_duration' => $legend_show_duration,

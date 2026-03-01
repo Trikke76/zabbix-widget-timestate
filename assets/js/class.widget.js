@@ -57,12 +57,15 @@ window.CWidgetTimeState = class extends CWidget {
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
 		const segmentLabelMode = Math.max(0, Math.min(2, Number(model.segment_label_mode ?? 0)));
+		const rowGroupMode = Math.max(0, Math.min(2, Number(model.row_group_mode ?? 0)));
+		const rowGroupCollapsed = Number(model.row_group_collapsed ?? 0) === 1;
 
 		const legend = new Map();
 		const table = document.createElement('div');
 		table.className = 'timestate__table';
 		const tooltip = this._createTooltip(root);
 
+		const renderedRows = [];
 		for (const row of rows) {
 			const rowEl = document.createElement('div');
 			rowEl.className = 'timestate__row';
@@ -116,7 +119,57 @@ window.CWidgetTimeState = class extends CWidget {
 
 			rowEl.appendChild(labelEl);
 			rowEl.appendChild(lane);
-			table.appendChild(rowEl);
+			renderedRows.push({
+				row,
+				rowEl
+			});
+		}
+
+		if (rowGroupMode === 0) {
+			for (const entry of renderedRows) {
+				table.appendChild(entry.rowEl);
+			}
+		}
+		else {
+			const groups = new Map();
+			for (const entry of renderedRows) {
+				const groupName = this._resolveGroupName(entry.row, rowGroupMode);
+				if (!groups.has(groupName)) {
+					groups.set(groupName, []);
+				}
+				groups.get(groupName).push(entry.rowEl);
+			}
+
+			for (const [groupName, rowEls] of groups.entries()) {
+				const groupEl = document.createElement('section');
+				groupEl.className = 'timestate__group';
+				if (rowGroupCollapsed) {
+					groupEl.classList.add('is-collapsed');
+				}
+
+				const headBtn = document.createElement('button');
+				headBtn.type = 'button';
+				headBtn.className = 'timestate__group-head';
+				headBtn.innerHTML = `<span class="timestate__group-title">${this._escape(groupName)}</span><span class="timestate__group-meta">${rowEls.length} row(s)</span>`;
+
+				const body = document.createElement('div');
+				body.className = 'timestate__group-body';
+				for (const rowEl of rowEls) {
+					body.appendChild(rowEl);
+				}
+				if (rowGroupCollapsed) {
+					body.style.display = 'none';
+				}
+
+				headBtn.addEventListener('click', () => {
+					const collapsed = groupEl.classList.toggle('is-collapsed');
+					body.style.display = collapsed ? 'none' : '';
+				});
+
+				groupEl.appendChild(headBtn);
+				groupEl.appendChild(body);
+				table.appendChild(groupEl);
+			}
 		}
 
 		const axisRow = document.createElement('div');
@@ -395,6 +448,23 @@ window.CWidgetTimeState = class extends CWidget {
 			return text;
 		}
 		return text.slice(idx + 2).trim();
+	}
+
+	_resolveGroupName(row, mode) {
+		if (mode === 1) {
+			const host = String(row?.host_name || '').trim();
+			if (host !== '') {
+				return host;
+			}
+			const full = String(row?.row_label || '');
+			const idx = full.indexOf('::');
+			return idx > -1 ? full.slice(0, idx).trim() : 'Host';
+		}
+		if (mode === 2) {
+			const dataset = String(row?.dataset_name || '').trim();
+			return dataset !== '' ? dataset : 'Data set';
+		}
+		return '';
 	}
 
 	_escape(text) {

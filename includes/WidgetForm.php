@@ -66,6 +66,19 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
+				(new CWidgetFieldSelect('row_group_mode', _('Row grouping'), [
+					0 => _('None'),
+					1 => _('Host'),
+					2 => _('Data set')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldSelect('row_group_collapsed', _('Groups collapsed by default'), [
+					0 => _('No'),
+					1 => _('Yes')
+				]))->setDefault(0)
+			)
+			->addField(
 				(new CWidgetFieldSelect('legend_mode', _('Legend mode'), [
 					0 => _('List'),
 					1 => _('Table'),

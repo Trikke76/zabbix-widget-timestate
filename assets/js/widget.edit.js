@@ -1831,6 +1831,8 @@
 
 		// Keep global row sorting, but move it close to Hosts.
 		moveFieldRowBefore('row_sort', 'item_key_search');
+		moveFieldRowBefore('row_group_mode', 'item_key_search');
+		moveFieldRowBefore('row_group_collapsed', 'item_key_search');
 		moveFieldRowBefore('legend_mode', 'item_key_search');
 		moveFieldRowBefore('legend_show_count', 'item_key_search');
 		moveFieldRowBefore('legend_show_duration', 'item_key_search');

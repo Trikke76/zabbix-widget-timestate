@@ -47,6 +47,56 @@
 	overflow: auto;
 }
 
+.timestate__group {
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 6px;
+	background: rgba(15, 23, 34, 0.2);
+	overflow: hidden;
+}
+
+.timestate__group-head {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 6px 10px;
+	border: 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	background: rgba(15, 23, 34, 0.35);
+	color: #d9e2ec;
+	cursor: pointer;
+	text-align: left;
+}
+
+.timestate__group-head::before {
+	content: "▾";
+	margin-right: 4px;
+	color: #9fb1c5;
+}
+
+.timestate__group.is-collapsed .timestate__group-head::before {
+	content: "▸";
+}
+
+.timestate__group-title {
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.timestate__group-meta {
+	font-size: 11px;
+	color: #9fb1c5;
+	margin-left: auto;
+}
+
+.timestate__group-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 6px;
+}
+
 .timestate__row {
 	display: grid;
 	grid-template-columns: minmax(120px, 200px) 1fr;
