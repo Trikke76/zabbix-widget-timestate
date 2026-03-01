@@ -1416,7 +1416,7 @@
 			'</div>',
 			'<div class="timestate-dataset-grid">',
 				'<label class="timestate-dataset-field"><span>Name (optional)</span><input type="text" class="timestate-dataset-title" placeholder="Agent availability"></label>',
-				'<label class="timestate-dataset-field is-full"><span>Item filter</span><div class="timestate-dataset-filter"><select class="timestate-dataset-filtertype"><option value="key">Item key filter (substring)</option><option value="name">Item name filter (substring)</option></select><div class="timestate-dataset-filter-input"><input type="text" class="timestate-dataset-filtervalue" placeholder="zabbix[host,agent,available]"><div class="timestate-dataset-suggest is-hidden"></div></div></div></label>',
+				'<label class="timestate-dataset-field is-full"><span>Item filter</span><div class="timestate-dataset-filter"><select class="timestate-dataset-filtertype"><option value="key">Item key filter (substring)</option><option value="name">Item name filter (substring)</option></select><div class="timestate-dataset-filter-input"><input type="text" class="timestate-dataset-filtervalue" placeholder="zabbix[host,agent,available]" autocomplete="off" autocapitalize="off" spellcheck="false"><div class="timestate-dataset-suggest is-hidden"></div></div></div></label>',
 				'<input type="hidden" class="timestate-dataset-filterexact" value="0">',
 				'<label class="timestate-dataset-field"><span>Max rows</span><input type="text" class="timestate-dataset-maxrows"></label>',
 				'<label class="timestate-dataset-field"><span>Lookback (hours)</span><input type="text" class="timestate-dataset-lookback"></label>',
@@ -1481,6 +1481,7 @@
 		let previewSeq = 0;
 		let suggestTimer = null;
 		let suggestSeq = 0;
+		rowEl.dataset.suggestArmed = '0';
 		const positionSuggest = () => {
 			if (!suggestBox || suggestBox.classList.contains('is-hidden') || !filterInput) {
 				return;
@@ -1552,12 +1553,14 @@
 					event.preventDefault();
 					if (filterInput) {
 						rowEl.dataset.suggestLock = '1';
+						rowEl.dataset.suggestArmed = '0';
 						filterInput.value = mainText;
 						if (filterExactInput) {
 							filterExactInput.value = '1';
 						}
 						filterInput.dispatchEvent(new Event('input', {bubbles: true}));
 						filterInput.dispatchEvent(new Event('change', {bubbles: true}));
+						filterInput.blur();
 					}
 					hideSuggest();
 					window.setTimeout(() => {
@@ -1571,6 +1574,10 @@
 		};
 
 		const refreshSuggest = async () => {
+			if (rowEl.dataset.suggestArmed !== '1') {
+				hideSuggest();
+				return;
+			}
 			if (document.activeElement !== filterInput) {
 				hideSuggest();
 				return;
@@ -1711,12 +1718,17 @@
 			if (filterExactInput) {
 				filterExactInput.value = '0';
 			}
+			rowEl.dataset.suggestArmed = '0';
+			hideSuggest();
 			scheduleSuggest();
 			schedulePreview();
 		});
-		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('input', () => {
+		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('input', (event) => {
 			if (rowEl.dataset.suggestLock !== '1' && filterExactInput) {
 				filterExactInput.value = '0';
+			}
+			if (event.isTrusted && rowEl.dataset.suggestLock !== '1') {
+				rowEl.dataset.suggestArmed = '1';
 			}
 			if (rowEl.dataset.suggestLock === '1') {
 				schedulePreview();
@@ -1726,6 +1738,7 @@
 			schedulePreview();
 		});
 		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('blur', () => {
+			rowEl.dataset.suggestArmed = '0';
 			window.setTimeout(hideSuggest, 120);
 		});
 		window.addEventListener('resize', positionSuggest);
@@ -1751,6 +1764,9 @@
 		}
 
 		ensureValueMappingBuilderStyle();
+		document.querySelectorAll('.timestate-dataset-suggest').forEach((el) => {
+			el.remove();
+		});
 		const hiddenWrap = hiddenField.closest('.form-field');
 		if (!hiddenWrap || !hiddenWrap.parentNode) {
 			return;
