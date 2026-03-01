@@ -855,8 +855,16 @@
 			'.timestate-datasets-title{font-size:12px;font-weight:600;color:#d7e1ec;margin:0 0 8px 0;}',
 			'.timestate-datasets-help{font-size:11px;color:#9fb2c8;margin:0 0 8px 0;}',
 			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;}',
-			'.timestate-dataset-row{display:grid;grid-template-columns:minmax(140px,.7fr) minmax(180px,1fr) minmax(180px,1fr) minmax(320px,1.6fr) 28px;gap:8px;align-items:center;padding:8px;border:1px solid #2e3a4b;border-radius:6px;background:#0f1a29;}',
+			'.timestate-dataset-row{padding:10px;border:1px solid #2e3a4b;border-radius:6px;background:#0f1a29;}',
+			'.timestate-dataset-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px 0;}',
+			'.timestate-dataset-name{font-size:12px;font-weight:600;color:#d7e1ec;}',
+			'.timestate-dataset-grid{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr) minmax(120px,.6fr) minmax(120px,.6fr);gap:8px;}',
+			'.timestate-dataset-field{display:flex;flex-direction:column;gap:4px;min-width:0;}',
+			'.timestate-dataset-field > span{font-size:11px;color:#9fb2c8;}',
+			'.timestate-dataset-field.is-full{grid-column:1 / -1;}',
 			'.timestate-dataset-row input{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:5px 7px;box-sizing:border-box;}',
+			'.timestate-dataset-row textarea{width:100%;min-height:58px;resize:vertical;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:6px 7px;box-sizing:border-box;font:inherit;}',
+			'.timestate-dataset-row select{width:100%;background:#0f151d;color:#e5edf5;border:1px solid #354255;border-radius:6px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-dataset-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}',
 			'.timestate-dataset-remove{width:28px;height:28px;border:1px solid #4b5a6d;background:#1a2431;color:#e7eef7;border-radius:6px;cursor:pointer;}',
 			'.timestate-map-builder{margin-top:8px;padding:10px;border:1px solid #3a4655;border-radius:6px;background:#141b24;}',
@@ -870,8 +878,8 @@
 			'.timestate-map-cond-range{display:grid;grid-template-columns:1fr 1fr;gap:6px;}',
 			'.timestate-map-remove{width:28px;height:28px;border:1px solid #4b5a6d;background:#1a2431;color:#e7eef7;border-radius:6px;cursor:pointer;}',
 			'.timestate-map-add{margin-top:8px;border:1px solid #3b82f6;background:#0f172a;color:#e2ecff;border-radius:6px;padding:5px 10px;cursor:pointer;}',
-			'@media (max-width: 1360px){.timestate-dataset-row{grid-template-columns:minmax(130px,.7fr) minmax(0,1fr) minmax(0,1fr) minmax(260px,1.3fr) 28px;}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
-			'@media (max-width: 980px){.timestate-dataset-row{grid-template-columns:minmax(0,1fr);}.timestate-dataset-row .timestate-dataset-remove{justify-self:end;}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
+			'@media (max-width: 1360px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
+			'@media (max-width: 980px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
 		document.head.appendChild(style);
 	}
@@ -979,7 +987,13 @@
 					name: String(entry.name || ''),
 					item_key_search: String(entry.item_key_search || ''),
 					item_name_search: String(entry.item_name_search || ''),
-					state_map: String(entry.state_map || '')
+					max_rows: String(entry.max_rows || '20'),
+					history_points: String(entry.history_points || '500'),
+					merge_equal_states: String(entry.merge_equal_states ?? '1'),
+					merge_shorter_than: String(entry.merge_shorter_than || '0'),
+					null_gap_mode: String(entry.null_gap_mode ?? '0'),
+					null_gap_backfill_first: String(entry.null_gap_backfill_first ?? '0'),
+					state_map: String(entry.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 				}));
 		}
 		catch (_error) {
@@ -993,11 +1007,28 @@
 			const name = String(set.name || '').trim();
 			const item_key_search = String(set.item_key_search || '').trim();
 			const item_name_search = String(set.item_name_search || '').trim();
+			const max_rows = String(set.max_rows || '').trim();
+			const history_points = String(set.history_points || '').trim();
+			const merge_equal_states = String(set.merge_equal_states ?? '1').trim();
+			const merge_shorter_than = String(set.merge_shorter_than || '').trim();
+			const null_gap_mode = String(set.null_gap_mode ?? '0').trim();
+			const null_gap_backfill_first = String(set.null_gap_backfill_first ?? '0').trim();
 			const state_map = String(set.state_map || '').trim();
 			if (state_map === '') {
 				continue;
 			}
-			rows.push({name, item_key_search, item_name_search, state_map});
+			rows.push({
+				name,
+				item_key_search,
+				item_name_search,
+				max_rows,
+				history_points,
+				merge_equal_states,
+				merge_shorter_than,
+				null_gap_mode,
+				null_gap_backfill_first,
+				state_map
+			});
 		}
 		return JSON.stringify(rows);
 	}
@@ -1192,9 +1223,15 @@
 		const rows = [];
 		for (const rowEl of rowsWrap.querySelectorAll('.timestate-dataset-row')) {
 			rows.push({
-				name: String(rowEl.querySelector('.timestate-dataset-name')?.value || ''),
+				name: String(rowEl.querySelector('.timestate-dataset-title')?.value || ''),
 				item_key_search: String(rowEl.querySelector('.timestate-dataset-key')?.value || ''),
 				item_name_search: String(rowEl.querySelector('.timestate-dataset-namefilter')?.value || ''),
+				max_rows: String(rowEl.querySelector('.timestate-dataset-maxrows')?.value || '20'),
+				history_points: String(rowEl.querySelector('.timestate-dataset-history')?.value || '500'),
+				merge_equal_states: String(rowEl.querySelector('.timestate-dataset-mergeequal')?.value || '1'),
+				merge_shorter_than: String(rowEl.querySelector('.timestate-dataset-mergeshort')?.value || '0'),
+				null_gap_mode: String(rowEl.querySelector('.timestate-dataset-nullgap')?.value || '0'),
+				null_gap_backfill_first: String(rowEl.querySelector('.timestate-dataset-backfill')?.value || '0'),
 				state_map: String(rowEl.querySelector('.timestate-dataset-map')?.value || '')
 			});
 		}
@@ -1202,24 +1239,59 @@
 	}
 
 	function buildDataSetRow(rowsWrap, hiddenField, data = null) {
-		const set = data || {name: '', item_key_search: '', item_name_search: '', state_map: ''};
+		const set = data || {
+			name: '',
+			item_key_search: '',
+			item_name_search: '',
+			max_rows: '20',
+			history_points: '500',
+			merge_equal_states: '1',
+			merge_shorter_than: '0',
+			null_gap_mode: '0',
+			null_gap_backfill_first: '0',
+			state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
+		};
 		const rowEl = document.createElement('div');
 		rowEl.className = 'timestate-dataset-row';
 		rowEl.innerHTML = [
-			'<input type="text" class="timestate-dataset-name" placeholder="Data set name">',
-			'<input type="text" class="timestate-dataset-key" placeholder="Item key filter (*availability*)">',
-			'<input type="text" class="timestate-dataset-namefilter" placeholder="Item name filter (*agent*)">',
-			'<input type="text" class="timestate-dataset-map" placeholder="Mappings (same syntax as Value mappings)">',
-			'<button type="button" class="timestate-dataset-remove">×</button>'
+			'<div class="timestate-dataset-head">',
+				'<div class="timestate-dataset-name">Data set</div>',
+				'<button type="button" class="timestate-dataset-remove">×</button>',
+			'</div>',
+			'<div class="timestate-dataset-grid">',
+				'<label class="timestate-dataset-field"><span>Name (optional)</span><input type="text" class="timestate-dataset-title" placeholder="Agent availability"></label>',
+				'<label class="timestate-dataset-field"><span>Item key filter (substring)</span><input type="text" class="timestate-dataset-key" placeholder="zabbix[host,agent,available]"></label>',
+				'<label class="timestate-dataset-field"><span>Item name filter (substring)</span><input type="text" class="timestate-dataset-namefilter" placeholder="*agent*"></label>',
+				'<label class="timestate-dataset-field"><span>Max rows</span><input type="text" class="timestate-dataset-maxrows"></label>',
+				'<label class="timestate-dataset-field"><span>History points per item</span><input type="text" class="timestate-dataset-history"></label>',
+				'<label class="timestate-dataset-field"><span>Merge equal consecutive states</span><select class="timestate-dataset-mergeequal"><option value="1">Yes</option><option value="0">No</option></select></label>',
+				'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
+				'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
+				'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
+				'<label class="timestate-dataset-field is-full"><span>Value mappings (comma separated)</span><textarea class="timestate-dataset-map" placeholder="value:0=OK|#2E7D32,value:1=Problem|#C62828"></textarea></label>',
+			'</div>'
 		].join('');
 
-		rowEl.querySelector('.timestate-dataset-name').value = String(set.name || '');
+		rowEl.querySelector('.timestate-dataset-title').value = String(set.name || '');
 		rowEl.querySelector('.timestate-dataset-key').value = String(set.item_key_search || '');
 		rowEl.querySelector('.timestate-dataset-namefilter').value = String(set.item_name_search || '');
+		rowEl.querySelector('.timestate-dataset-maxrows').value = String(set.max_rows || '20');
+		rowEl.querySelector('.timestate-dataset-history').value = String(set.history_points || '500');
+		rowEl.querySelector('.timestate-dataset-mergeequal').value = String(set.merge_equal_states ?? '1');
+		rowEl.querySelector('.timestate-dataset-mergeshort').value = String(set.merge_shorter_than || '0');
+		rowEl.querySelector('.timestate-dataset-nullgap').value = String(set.null_gap_mode ?? '0');
+		rowEl.querySelector('.timestate-dataset-backfill').value = String(set.null_gap_backfill_first ?? '0');
 		rowEl.querySelector('.timestate-dataset-map').value = String(set.state_map || '');
 		rowsWrap.appendChild(rowEl);
 
+		const titleEl = rowEl.querySelector('.timestate-dataset-title');
+		const headNameEl = rowEl.querySelector('.timestate-dataset-name');
+
 		const sync = () => {
+			const title = String(titleEl?.value || '').trim();
+			if (headNameEl) {
+				headNameEl.textContent = title !== '' ? title : 'Data set';
+			}
 			const rows = getDataSetsFromDom(rowsWrap);
 			hiddenField.value = serializeDataSets(rows);
 			hiddenField.dispatchEvent(new Event('input', {bubbles: true}));
@@ -1260,7 +1332,7 @@
 		builder.className = 'timestate-datasets';
 		builder.innerHTML = [
 			'<div class="timestate-datasets-title">Data sets</div>',
-			'<div class="timestate-datasets-help">First matching data set is used per item (wildcards supported with * and ?). Leave empty to use global value mappings.</div>',
+			'<div class="timestate-datasets-help">Each data set has its own filters and processing options. Add as many as you need.</div>',
 			'<div class="timestate-dataset-rows"></div>',
 			'<button type="button" class="timestate-dataset-add">Add data set</button>'
 		].join('');
@@ -1270,14 +1342,57 @@
 
 		const rowsWrap = builder.querySelector('.timestate-dataset-rows');
 		const addBtn = builder.querySelector('.timestate-dataset-add');
-		const rows = parseDataSets(hiddenField.value);
+		let rows = parseDataSets(hiddenField.value);
+		if (rows.length === 0) {
+			rows = [{
+				name: '',
+				item_key_search: String(findField('item_key_search')?.value || ''),
+				item_name_search: String(findField('item_name_search')?.value || ''),
+				max_rows: String(findField('max_rows')?.value || '20'),
+				history_points: String(findField('history_points')?.value || '500'),
+				merge_equal_states: String(findField('merge_equal_states')?.value || '1'),
+				merge_shorter_than: String(findField('merge_shorter_than')?.value || '0'),
+				null_gap_mode: String(findField('null_gap_mode')?.value || '0'),
+				null_gap_backfill_first: String(findField('null_gap_backfill_first')?.value || '0'),
+				state_map: String(findField('state_map')?.value || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
+			}];
+		}
 		for (const row of rows) {
 			buildDataSetRow(rowsWrap, hiddenField, row);
 		}
 
 		addBtn?.addEventListener('click', () => {
-			buildDataSetRow(rowsWrap, hiddenField, {name: '', item_key_search: '', item_name_search: '', state_map: ''});
+			buildDataSetRow(rowsWrap, hiddenField, {
+				name: '',
+				item_key_search: '',
+				item_name_search: '',
+				max_rows: '20',
+				history_points: '500',
+				merge_equal_states: '1',
+				merge_shorter_than: '0',
+				null_gap_mode: '0',
+				null_gap_backfill_first: '0',
+				state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
+			});
 		});
+
+		for (const legacy of [
+			'item_key_search',
+			'item_name_search',
+			'max_rows',
+			'history_points',
+			'merge_equal_states',
+			'merge_shorter_than',
+			'null_gap_mode',
+			'null_gap_backfill_first',
+			'state_map'
+		]) {
+			const field = findField(legacy);
+			const wrap = field ? field.closest('.form-field') : null;
+			if (wrap) {
+				wrap.style.display = 'none';
+			}
+		}
 
 		window.timestate_widget_form._dataSetBuilderBound = true;
 	}
@@ -1356,9 +1471,7 @@
 			});
 			observer.observe(document.body, {childList: true, subtree: true});
 
-			ensureItemPreviewBinding();
 			ensureDataSetBuilder();
-			ensureValueMappingBuilder();
 		}
 	};
 })();

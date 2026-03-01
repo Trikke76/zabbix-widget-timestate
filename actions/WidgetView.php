@@ -16,19 +16,22 @@ class WidgetView extends CControllerDashboardWidgetView {
 
 	protected function doAction(): void {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
-		$item_key_search = trim((string) ($this->fields_values['item_key_search'] ?? ''));
-		$item_name_search = trim((string) ($this->fields_values['item_name_search'] ?? ''));
 		$lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
-		$max_rows = $this->clampInt((int) ($this->fields_values['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
-		$history_points = $this->clampInt((int) ($this->fields_values['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
-		$merge_equal = ((int) ($this->fields_values['merge_equal_states'] ?? 1)) === 1;
-		$merge_shorter_than = $this->clampInt((int) ($this->fields_values['merge_shorter_than'] ?? 0), 0, 3600);
-		$null_gap_mode = (int) ($this->fields_values['null_gap_mode'] ?? 0);
-		$connect_null_gaps = ($null_gap_mode === 1);
-		$backfill_first = ((int) ($this->fields_values['null_gap_backfill_first'] ?? 0)) === 1;
 		$row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
-		$value_mappings = $this->parseValueMappings((string) ($this->fields_values['state_map'] ?? ''));
-		$data_sets = $this->parseDataSets((string) ($this->fields_values['datasets_json'] ?? ''));
+		$data_sets = $this->parseDataSets(
+			(string) ($this->fields_values['datasets_json'] ?? ''),
+			[
+				'item_key_search' => trim((string) ($this->fields_values['item_key_search'] ?? '')),
+				'item_name_search' => trim((string) ($this->fields_values['item_name_search'] ?? '')),
+				'max_rows' => (int) ($this->fields_values['max_rows'] ?? self::DEFAULT_MAX_ROWS),
+				'history_points' => (int) ($this->fields_values['history_points'] ?? self::DEFAULT_HISTORY_POINTS),
+				'merge_equal_states' => (int) ($this->fields_values['merge_equal_states'] ?? 1),
+				'merge_shorter_than' => (int) ($this->fields_values['merge_shorter_than'] ?? 0),
+				'null_gap_mode' => (int) ($this->fields_values['null_gap_mode'] ?? 0),
+				'null_gap_backfill_first' => (int) ($this->fields_values['null_gap_backfill_first'] ?? 0),
+				'state_map' => (string) ($this->fields_values['state_map'] ?? 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
+			]
+		);
 		$base_colors = $this->buildBaseColorMap();
 		$time_to = time();
 		$time_from = $time_to - ($lookback_hours * 3600);
@@ -46,49 +49,76 @@ class WidgetView extends CControllerDashboardWidgetView {
 			return;
 		}
 
-		$items = $this->loadCandidateItems($hostids, $item_key_search, $item_name_search, $max_rows);
 		$rows = [];
+		$seen_itemids = [];
+		$selected_items = [];
 
-		foreach ($items as $item) {
-			$value_type = (int) $item['value_type'];
-			if (!in_array($value_type, [0, 1, 2, 3, 4], true)) {
-				continue;
-			}
-
-			$history = API::History()->get([
-				'output' => ['clock', 'value'],
-				'itemids' => [(string) $item['itemid']],
-				'history' => $value_type,
-				'time_from' => $time_from,
-				'time_till' => $time_to,
-				'sortfield' => 'clock',
-				'sortorder' => 'ASC',
-				'limit' => $history_points
-			]);
-
-			$segments = $this->buildSegments(
-				$history ?: [],
-				$time_from,
-				$time_to,
-				$this->resolveItemMappings($item, $value_mappings, $data_sets),
-				$base_colors,
-				$merge_equal,
-				$connect_null_gaps,
-				$merge_shorter_than,
-				$backfill_first
+		foreach ($data_sets as $data_set) {
+			$items = $this->loadCandidateItems(
+				$hostids,
+				(string) $data_set['item_key_search'],
+				(string) $data_set['item_name_search'],
+				(int) $data_set['max_rows']
 			);
-			if ($segments === []) {
-				continue;
-			}
+			$value_mappings = is_array($data_set['rules']) ? $data_set['rules'] : [];
+			$history_points = (int) $data_set['history_points'];
+			$merge_equal = ((int) $data_set['merge_equal_states']) === 1;
+			$merge_shorter_than = (int) $data_set['merge_shorter_than'];
+			$connect_null_gaps = ((int) $data_set['null_gap_mode']) === 1;
+			$backfill_first = ((int) $data_set['null_gap_backfill_first']) === 1;
 
-			$rows[] = [
-				'row_label' => sprintf('%s :: %s', (string) $item['host_name'], (string) $item['name']),
-				'itemid' => (string) $item['itemid'],
-				'key_' => (string) $item['key_'],
-				'segments' => $segments,
-				'_sort_state' => $this->getCurrentState($segments),
-				'_sort_last_change' => $this->getLastChangeTs($segments)
-			];
+			foreach ($items as $item) {
+				$itemid = (string) ($item['itemid'] ?? '');
+				if ($itemid === '' || isset($seen_itemids[$itemid])) {
+					continue;
+				}
+
+				$value_type = (int) $item['value_type'];
+				if (!in_array($value_type, [0, 1, 2, 3, 4], true)) {
+					continue;
+				}
+
+				$history = API::History()->get([
+					'output' => ['clock', 'value'],
+					'itemids' => [$itemid],
+					'history' => $value_type,
+					'time_from' => $time_from,
+					'time_till' => $time_to,
+					'sortfield' => 'clock',
+					'sortorder' => 'ASC',
+					'limit' => $history_points
+				]);
+
+				$segments = $this->buildSegments(
+					$history ?: [],
+					$time_from,
+					$time_to,
+					$value_mappings,
+					$base_colors,
+					$merge_equal,
+					$connect_null_gaps,
+					$merge_shorter_than,
+					$backfill_first
+				);
+				if ($segments === []) {
+					continue;
+				}
+
+				$rows[] = [
+					'row_label' => sprintf('%s :: %s', (string) $item['host_name'], (string) $item['name']),
+					'itemid' => $itemid,
+					'key_' => (string) $item['key_'],
+					'segments' => $segments,
+					'_sort_state' => $this->getCurrentState($segments),
+					'_sort_last_change' => $this->getLastChangeTs($segments)
+				];
+				$selected_items[] = [
+					'host_name' => (string) ($item['host_name'] ?? ''),
+					'name' => (string) ($item['name'] ?? ''),
+					'key_' => (string) ($item['key_'] ?? '')
+				];
+				$seen_itemids[$itemid] = true;
+			}
 		}
 		$this->sortRows($rows, $row_sort);
 		foreach ($rows as &$row) {
@@ -99,7 +129,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$this->setResponse(new CControllerResponseData([
 			'name' => $this->widget->getDefaultName(),
 			'rows' => $rows,
-			'selected_items' => $this->buildSelectedItemPreview($items),
+			'selected_items' => $this->buildSelectedItemPreview($selected_items),
 			'time_from' => $time_from,
 			'time_to' => $time_to,
 			'error' => null,
@@ -525,15 +555,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 		return [$label, $color];
 	}
 
-	private function parseDataSets(string $raw): array {
+	private function parseDataSets(string $raw, array $fallback): array {
 		$raw = trim($raw);
 		if ($raw === '') {
-			return [];
+			return [$this->normalizeDataSet($fallback)];
 		}
 
 		$data = json_decode($raw, true);
 		if (!is_array($data)) {
-			return [];
+			return [$this->normalizeDataSet($fallback)];
 		}
 
 		$sets = [];
@@ -541,59 +571,34 @@ class WidgetView extends CControllerDashboardWidgetView {
 			if (!is_array($entry)) {
 				continue;
 			}
-
-			$item_key_search = trim((string) ($entry['item_key_search'] ?? ''));
-			$item_name_search = trim((string) ($entry['item_name_search'] ?? ''));
-			$state_map_raw = trim((string) ($entry['state_map'] ?? ''));
-			$rules = $this->parseValueMappings($state_map_raw);
-			if ($rules === []) {
-				continue;
-			}
-
-			$sets[] = [
-				'name' => trim((string) ($entry['name'] ?? '')),
-				'item_key_search' => $item_key_search,
-				'item_name_search' => $item_name_search,
-				'rules' => $rules
-			];
+			$sets[] = $this->normalizeDataSet($entry);
 		}
 
-		return $sets;
+		return $sets !== [] ? $sets : [$this->normalizeDataSet($fallback)];
 	}
 
-	private function resolveItemMappings(array $item, array $default_rules, array $data_sets): array {
-		if ($data_sets === []) {
-			return $default_rules;
+	private function normalizeDataSet(array $entry): array {
+		$max_rows = $this->clampInt((int) ($entry['max_rows'] ?? self::DEFAULT_MAX_ROWS), 1, 200);
+		$history_points = $this->clampInt((int) ($entry['history_points'] ?? self::DEFAULT_HISTORY_POINTS), 10, 5000);
+		$merge_shorter_than = $this->clampInt((int) ($entry['merge_shorter_than'] ?? 0), 0, 3600);
+		$state_map_raw = trim((string) ($entry['state_map'] ?? ''));
+		if ($state_map_raw === '') {
+			$state_map_raw = 'value:0=OK|#2E7D32,value:1=Problem|#C62828';
 		}
+		$rules = $this->parseValueMappings($state_map_raw);
 
-		$item_key = (string) ($item['key_'] ?? '');
-		$item_name = (string) ($item['name'] ?? '');
-
-		foreach ($data_sets as $set) {
-			$key_filter = (string) ($set['item_key_search'] ?? '');
-			$name_filter = (string) ($set['item_name_search'] ?? '');
-			$match_key = ($key_filter === '') || $this->wildcardMatch($key_filter, $item_key);
-			$match_name = ($name_filter === '') || $this->wildcardMatch($name_filter, $item_name);
-
-			if ($match_key && $match_name) {
-				$rules = $set['rules'] ?? [];
-				if (is_array($rules) && $rules !== []) {
-					return $rules;
-				}
-			}
-		}
-
-		return $default_rules;
-	}
-
-	private function wildcardMatch(string $pattern, string $subject): bool {
-		$pattern = trim($pattern);
-		if ($pattern === '') {
-			return true;
-		}
-
-		$regex = '/^' . str_replace(['\*', '\?'], ['.*', '.'], preg_quote($pattern, '/')) . '$/iu';
-		return preg_match($regex, $subject) === 1;
+		return [
+			'name' => trim((string) ($entry['name'] ?? '')),
+			'item_key_search' => trim((string) ($entry['item_key_search'] ?? '')),
+			'item_name_search' => trim((string) ($entry['item_name_search'] ?? '')),
+			'max_rows' => $max_rows,
+			'history_points' => $history_points,
+			'merge_equal_states' => ((int) ($entry['merge_equal_states'] ?? 1)) === 1 ? 1 : 0,
+			'merge_shorter_than' => $merge_shorter_than,
+			'null_gap_mode' => ((int) ($entry['null_gap_mode'] ?? 0)) === 1 ? 1 : 0,
+			'null_gap_backfill_first' => ((int) ($entry['null_gap_backfill_first'] ?? 0)) === 1 ? 1 : 0,
+			'rules' => $rules !== [] ? $rules : $this->parseValueMappings('value:0=OK|#2E7D32,value:1=Problem|#C62828')
+		];
 	}
 
 	private function mapValue(string $raw_value, string $state, array $rules, array $base_colors): array {
