@@ -70,7 +70,7 @@ class WidgetForm extends CWidgetForm {
 					->setDefault('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			)
 			->addField(
-				(new CWidgetFieldTextBox('datasets_json', _('Data sets (JSON)')))
+				(new CWidgetFieldTextBox('datasets_json', _('Data sets')))
 					->setDefault('')
 			);
 	}
