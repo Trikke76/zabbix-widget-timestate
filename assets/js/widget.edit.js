@@ -1132,6 +1132,11 @@
 	}
 
 	function ensureGlobalOptionsPanel() {
+		const existing = document.querySelector('.timestate-global-panel');
+		if (existing) {
+			existing.closest('.timestate-global-row, .form-field, .form-grid, .field-row, div')?.remove();
+			window.timestate_widget_form._globalOptionsPanelBound = false;
+		}
 		if (window.timestate_widget_form._globalOptionsPanelBound) {
 			return;
 		}
@@ -1172,7 +1177,11 @@
 			const tableRow = field.closest('tr');
 			if (tableRow) {
 				const labelCell = tableRow.querySelector('td.table-forms-td-left, td:first-child');
-				const valueCell = tableRow.querySelector('td.table-forms-td-right, td.table-forms-field, td:last-child');
+				const cells = Array.from(tableRow.querySelectorAll('td, .table-forms-field, .table-forms-td-right'));
+				let valueCell = cells.find((cell) => cell.contains(field)) || null;
+				if (!valueCell) {
+					valueCell = tableRow.querySelector('td.table-forms-td-right, td.table-forms-field');
+				}
 				if (labelCell) {
 					const text = String(labelCell.textContent || '').replace(/\s+/g, ' ').trim();
 					if (text !== '') {
@@ -1182,9 +1191,20 @@
 				if (valueCell) {
 					controlNode = document.createElement('div');
 					controlNode.className = 'timestate-global-control';
-					while (valueCell.firstChild) {
-						controlNode.appendChild(valueCell.firstChild);
+					const hasFieldInside = valueCell.contains(field);
+					if (hasFieldInside) {
+						while (valueCell.firstChild) {
+							controlNode.appendChild(valueCell.firstChild);
+						}
 					}
+					else {
+						controlNode.appendChild(field);
+					}
+				}
+				else {
+					controlNode = document.createElement('div');
+					controlNode.className = 'timestate-global-control';
+					controlNode.appendChild(field);
 				}
 				tableRow.style.display = 'none';
 			}
