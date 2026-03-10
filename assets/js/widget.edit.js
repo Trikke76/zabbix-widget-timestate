@@ -1898,7 +1898,7 @@
 			'Null-gap mode',
 			'Backfill from first value',
 			'Value mappings (comma separated)',
-			'Data sets (JSON)'
+			'Data sets (JSON)',
       'Data sets'
 		]);
 
