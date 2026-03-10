@@ -877,19 +877,27 @@
 			'.timestate-datasets-header{padding:10px 12px 8px;border-bottom:1px solid #3a3a3a;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 6px 0;}',
 			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0;}',
-			'.timestate-dataset-tabs-row{display:flex;align-items:stretch;gap:8px;padding:0 10px;border-bottom:1px solid #3a3a3a;background:#2a2a2a;}',
-			'.timestate-dataset-tabs{display:flex;flex:1 1 auto;flex-wrap:nowrap;gap:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;}',
-			'.timestate-dataset-tabs::-webkit-scrollbar{height:6px;}',
-			'.timestate-dataset-tabs::-webkit-scrollbar-thumb{background:#4a4a4a;border-radius:4px;}',
-			'.timestate-dataset-tab{position:relative;margin:0 2px 0 0;border:1px solid transparent;border-bottom:0;border-radius:4px 4px 0 0;background:transparent;color:#59afe1;padding:9px 14px 8px;cursor:pointer;line-height:1.2;white-space:nowrap;min-height:36px;top:1px;}',
-			'.timestate-dataset-tab:hover{color:#8fd1f3;background:rgba(89,175,225,.08);}',
-			'.timestate-dataset-tab.is-active{color:#e7edf3;background:#323232;border-color:#4b4b4b;font-weight:600;box-shadow:0 1px 0 #323232;}',
-			'.timestate-datasets.is-compact-tabs .timestate-dataset-tab{padding:7px 10px 6px;min-height:31px;font-size:12px;}',
-			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;padding:10px;}',
+			'.timestate-dataset-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:0;min-height:320px;}',
+			'.timestate-dataset-sidebar{border-right:1px solid #3a3a3a;background:#292929;padding:8px;}',
+			'.timestate-dataset-selectors{display:flex;flex-direction:column;gap:4px;max-height:460px;overflow:auto;margin:0 0 8px 0;padding-right:2px;}',
+			'.timestate-dataset-selector{display:grid;grid-template-columns:16px minmax(0,1fr) 18px;align-items:center;column-gap:8px;width:100%;border:1px solid transparent;background:transparent;color:#c9d3de;border-radius:3px;padding:7px 8px;cursor:pointer;text-align:left;}',
+			'.timestate-dataset-selector:hover{background:rgba(89,175,225,.08);color:#e7edf3;}',
+			'.timestate-dataset-selector.is-active{background:#323232;border-color:#4a4a4a;color:#ffffff;}',
+			'.timestate-dataset-selector-grip{color:#6b7f95;font-size:12px;line-height:1;}',
+			'.timestate-dataset-selector-title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
+			'.timestate-dataset-selector-caret{color:#8aa2b2;font-size:13px;line-height:1;justify-self:end;}',
+			'.timestate-dataset-main{padding:10px;}',
+			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;}',
 			'.timestate-dataset-row{display:none;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#232323;}',
 			'.timestate-dataset-row.is-active{display:block;}',
 			'.timestate-dataset-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px 0;padding:0 0 6px 0;border-bottom:1px solid #3a3a3a;}',
 			'.timestate-dataset-name{font-size:18px;font-weight:600;color:#e6e6e6;}',
+			'.timestate-dataset-section-tabs{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 8px 0;padding:0 0 8px 0;border-bottom:1px solid #3a3a3a;}',
+			'.timestate-dataset-section-tab{border:1px solid transparent;background:transparent;color:#59afe1;border-radius:3px;padding:5px 10px;cursor:pointer;line-height:1.2;}',
+			'.timestate-dataset-section-tab:hover{background:rgba(89,175,225,.08);color:#8fd1f3;}',
+			'.timestate-dataset-section-tab.is-active{background:#323232;border-color:#4b4b4b;color:#e7edf3;font-weight:600;}',
+			'.timestate-dataset-section{display:none;}',
+			'.timestate-dataset-section.is-active{display:block;}',
 			'.timestate-dataset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}',
 			'.timestate-dataset-filter{display:grid;grid-template-columns:220px minmax(320px,820px);gap:8px;align-items:center;}',
 			'.timestate-dataset-filter-input{position:relative;min-width:0;max-width:820px;}',
@@ -914,7 +922,9 @@
 			'.timestate-dataset-row input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-dataset-row textarea{width:100%;min-height:58px;resize:vertical;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:6px 7px;box-sizing:border-box;font:inherit;}',
 			'.timestate-dataset-row select{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
-			'.timestate-dataset-add{margin:4px 0 5px auto;border:1px solid #8aa2b2;background:#7f97a8;color:#ffffff;border-radius:3px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:28px;white-space:nowrap;flex:0 0 auto;}',
+			'.timestate-dataset-add{margin:0;border:1px solid #8aa2b2;background:#7f97a8;color:#ffffff;border-radius:3px;padding:5px 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:30px;white-space:nowrap;width:100%;gap:7px;}',
+			'.timestate-dataset-add .timestate-dataset-add-plus{font-size:20px;line-height:1;position:relative;top:-1px;}',
+			'.timestate-dataset-add .timestate-dataset-add-caret{margin-left:auto;color:#d8e3ec;font-size:12px;}',
 			'.timestate-dataset-remove{width:28px;height:28px;border:1px solid #4a4a4a;background:#2b2b2b;color:#d8d8d8;border-radius:3px;cursor:pointer;}',
 			'.timestate-map-builder{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;}',
 			'.timestate-map-builder-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
@@ -932,6 +942,7 @@
 			'.timestate-map-builder--dataset .timestate-map-builder-help{margin-bottom:6px;}',
 			'.timestate-edit-wide .port24-pop{position:fixed!important;z-index:2147483000!important;}',
 			'@media (max-width: 1360px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
+			'@media (max-width: 1180px){.timestate-dataset-layout{grid-template-columns:minmax(0,1fr);}.timestate-dataset-sidebar{border-right:0;border-bottom:1px solid #3a3a3a;}.timestate-dataset-selectors{max-height:180px;}}',
 			'@media (max-width: 980px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
 		document.head.appendChild(style);
@@ -1423,7 +1434,7 @@
 
 	function getDataSetTabTitle(rowEl, index) {
 		const explicit = String(rowEl.querySelector('.timestate-dataset-title')?.value || '').trim();
-		return explicit !== '' ? explicit : `Data set ${index + 1}`;
+		return explicit !== '' ? explicit : `Data set #${index + 1}`;
 	}
 
 	function renderDataSetTabs(builder, rowsWrap, requestedIndex = null) {
@@ -1431,16 +1442,15 @@
 			return;
 		}
 
-		const tabsWrap = builder.querySelector('.timestate-dataset-tabs');
-		if (!tabsWrap) {
+		const selectorsWrap = builder.querySelector('.timestate-dataset-selectors');
+		if (!selectorsWrap) {
 			return;
 		}
 
 		const rows = Array.from(rowsWrap.querySelectorAll('.timestate-dataset-row'));
 		if (rows.length === 0) {
-			tabsWrap.innerHTML = '';
+			selectorsWrap.innerHTML = '';
 			builder.dataset.activeIndex = '0';
-			builder.classList.remove('is-compact-tabs');
 			return;
 		}
 
@@ -1455,9 +1465,8 @@
 		}
 		activeIndex = Math.max(0, Math.min(rows.length - 1, Math.trunc(activeIndex)));
 		builder.dataset.activeIndex = String(activeIndex);
-		builder.classList.toggle('is-compact-tabs', rows.length >= 7);
 
-		tabsWrap.innerHTML = '';
+		selectorsWrap.innerHTML = '';
 		for (let i = 0; i < rows.length; i++) {
 			const rowEl = rows[i];
 			const active = i === activeIndex;
@@ -1469,24 +1478,62 @@
 				headName.textContent = tabTitle;
 			}
 
-			const tabBtn = document.createElement('button');
-			tabBtn.type = 'button';
-			tabBtn.className = `timestate-dataset-tab${active ? ' is-active' : ''}`;
-			tabBtn.textContent = tabTitle;
-			tabBtn.title = tabBtn.textContent;
-			tabBtn.setAttribute('aria-selected', active ? 'true' : 'false');
-			tabBtn.addEventListener('click', () => {
+			const selectorBtn = document.createElement('button');
+			selectorBtn.type = 'button';
+			selectorBtn.className = `timestate-dataset-selector${active ? ' is-active' : ''}`;
+			selectorBtn.title = tabTitle;
+			selectorBtn.innerHTML = [
+				'<span class="timestate-dataset-selector-grip">⋮</span>',
+				'<span class="timestate-dataset-selector-title"></span>',
+				'<span class="timestate-dataset-selector-caret"></span>'
+			].join('');
+			const titleEl = selectorBtn.querySelector('.timestate-dataset-selector-title');
+			if (titleEl) {
+				titleEl.textContent = tabTitle;
+			}
+			const caretEl = selectorBtn.querySelector('.timestate-dataset-selector-caret');
+			if (caretEl) {
+				caretEl.textContent = active ? '▾' : '▸';
+			}
+			selectorBtn.setAttribute('aria-selected', active ? 'true' : 'false');
+			selectorBtn.addEventListener('click', () => {
 				renderDataSetTabs(builder, rowsWrap, i);
 			});
-			tabsWrap.appendChild(tabBtn);
-			if (active) {
-				window.requestAnimationFrame(() => {
-					try {
-						tabBtn.scrollIntoView({block: 'nearest', inline: 'nearest', behavior: 'smooth'});
-					}
-					catch (_error) {}
-				});
+			selectorsWrap.appendChild(selectorBtn);
+		}
+	}
+
+	function initDataSetSectionTabs(rowEl) {
+		if (!rowEl) {
+			return;
+		}
+
+		const tabs = Array.from(rowEl.querySelectorAll('.timestate-dataset-section-tab'));
+		const sections = Array.from(rowEl.querySelectorAll('.timestate-dataset-section'));
+		if (tabs.length === 0 || sections.length === 0) {
+			return;
+		}
+
+		const setActive = (sectionName) => {
+			const target = String(sectionName || 'filter');
+			rowEl.dataset.activeSection = target;
+			for (const tab of tabs) {
+				const active = String(tab.dataset.section || '') === target;
+				tab.classList.toggle('is-active', active);
+				tab.setAttribute('aria-selected', active ? 'true' : 'false');
 			}
+			for (const panel of sections) {
+				const active = String(panel.dataset.section || '') === target;
+				panel.classList.toggle('is-active', active);
+			}
+		};
+
+		const initial = String(rowEl.dataset.activeSection || 'filter');
+		setActive(initial);
+		for (const tab of tabs) {
+			tab.addEventListener('click', () => {
+				setActive(tab.dataset.section || 'filter');
+			});
 		}
 	}
 
@@ -1512,24 +1559,42 @@
 				'<div class="timestate-dataset-name">Data set</div>',
 				'<button type="button" class="timestate-dataset-remove">×</button>',
 			'</div>',
-			'<div class="timestate-dataset-grid">',
-				'<label class="timestate-dataset-field"><span>Name (optional)</span><input type="text" class="timestate-dataset-title" placeholder="Agent availability"></label>',
-				'<label class="timestate-dataset-field is-full"><span>Item filter</span><div class="timestate-dataset-filter"><select class="timestate-dataset-filtertype"><option value="key">Item key filter (substring)</option><option value="name">Item name filter (substring)</option></select><div class="timestate-dataset-filter-input"><input type="text" class="timestate-dataset-filtervalue" placeholder="zabbix[host,agent,available]" autocomplete="off" autocapitalize="off" spellcheck="false"><div class="timestate-dataset-suggest is-hidden"></div></div></div></label>',
-				'<input type="hidden" class="timestate-dataset-filterexact" value="0">',
-				'<label class="timestate-dataset-field"><span>Max rows</span><input type="text" class="timestate-dataset-maxrows"></label>',
-				'<label class="timestate-dataset-field"><span>Lookback (hours, shared timeline uses longest lookback)</span><input type="text" class="timestate-dataset-lookback"></label>',
-				'<label class="timestate-dataset-field"><span>History points per item</span><input type="text" class="timestate-dataset-history"></label>',
-				'<label class="timestate-dataset-field"><span>Merge equal consecutive states</span><select class="timestate-dataset-mergeequal"><option value="1">Yes</option><option value="0">No</option></select></label>',
-				'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
-				'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
-				'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
-				'<div class="timestate-dataset-preview is-full"><div class="timestate-dataset-preview-title">Matched items</div><div class="timestate-dataset-preview-meta">Type to preview matching items (wildcards like * are supported).</div><div class="timestate-dataset-preview-list"></div></div>',
-				'<input type="hidden" class="timestate-dataset-map">',
-				'<div class="timestate-map-builder timestate-map-builder--dataset is-full">',
-					'<div class="timestate-map-builder-title">Value mappings</div>',
-					'<div class="timestate-map-builder-help">Type + condition + display text + color. Add multiple rows.</div>',
-					'<div class="timestate-map-rows"></div>',
-					'<button type="button" class="timestate-map-add">Add mapping</button>',
+			'<div class="timestate-dataset-section-tabs">',
+				'<button type="button" class="timestate-dataset-section-tab is-active" data-section="filter">Filter</button>',
+				'<button type="button" class="timestate-dataset-section-tab" data-section="processing">Processing</button>',
+				'<button type="button" class="timestate-dataset-section-tab" data-section="preview">Matched items</button>',
+				'<button type="button" class="timestate-dataset-section-tab" data-section="mappings">Value mappings</button>',
+			'</div>',
+			'<input type="hidden" class="timestate-dataset-filterexact" value="0">',
+			'<input type="hidden" class="timestate-dataset-map">',
+			'<div class="timestate-dataset-sections">',
+				'<div class="timestate-dataset-section is-active" data-section="filter">',
+					'<div class="timestate-dataset-grid">',
+						'<label class="timestate-dataset-field"><span>Name (optional)</span><input type="text" class="timestate-dataset-title" placeholder="Agent availability"></label>',
+						'<label class="timestate-dataset-field is-full"><span>Item filter</span><div class="timestate-dataset-filter"><select class="timestate-dataset-filtertype"><option value="key">Item key filter (substring)</option><option value="name">Item name filter (substring)</option></select><div class="timestate-dataset-filter-input"><input type="text" class="timestate-dataset-filtervalue" placeholder="zabbix[host,agent,available]" autocomplete="off" autocapitalize="off" spellcheck="false"><div class="timestate-dataset-suggest is-hidden"></div></div></div></label>',
+						'<label class="timestate-dataset-field"><span>Max rows</span><input type="text" class="timestate-dataset-maxrows"></label>',
+						'<label class="timestate-dataset-field"><span>Lookback (hours, shared timeline uses longest lookback)</span><input type="text" class="timestate-dataset-lookback"></label>',
+						'<label class="timestate-dataset-field"><span>History points per item</span><input type="text" class="timestate-dataset-history"></label>',
+					'</div>',
+				'</div>',
+				'<div class="timestate-dataset-section" data-section="processing">',
+					'<div class="timestate-dataset-grid">',
+						'<label class="timestate-dataset-field"><span>Merge equal consecutive states</span><select class="timestate-dataset-mergeequal"><option value="1">Yes</option><option value="0">No</option></select></label>',
+						'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
+						'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
+						'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
+					'</div>',
+				'</div>',
+				'<div class="timestate-dataset-section" data-section="preview">',
+					'<div class="timestate-dataset-preview"><div class="timestate-dataset-preview-title">Matched items</div><div class="timestate-dataset-preview-meta">Type to preview matching items (wildcards like * are supported).</div><div class="timestate-dataset-preview-list"></div></div>',
+				'</div>',
+				'<div class="timestate-dataset-section" data-section="mappings">',
+					'<div class="timestate-map-builder timestate-map-builder--dataset">',
+						'<div class="timestate-map-builder-title">Value mappings</div>',
+						'<div class="timestate-map-builder-help">Type + condition + display text + color. Add multiple rows.</div>',
+						'<div class="timestate-map-rows"></div>',
+						'<button type="button" class="timestate-map-add">Add mapping</button>',
+					'</div>',
 				'</div>',
 			'</div>'
 		].join('');
@@ -1547,6 +1612,7 @@
 		rowEl.querySelector('.timestate-dataset-backfill').value = String(set.null_gap_backfill_first ?? '0');
 		const stateMapField = rowEl.querySelector('.timestate-dataset-map');
 		stateMapField.value = String(set.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828');
+		initDataSetSectionTabs(rowEl);
 		rowsWrap.appendChild(rowEl);
 
 		const titleEl = rowEl.querySelector('.timestate-dataset-title');
@@ -1886,11 +1952,15 @@
 				'<div class="timestate-datasets-title">Data sets</div>',
 				'<div class="timestate-datasets-help">Each data set has its own filters and processing options. Add as many as you need.</div>',
 			'</div>',
-			'<div class="timestate-dataset-tabs-row">',
-				'<div class="timestate-dataset-tabs"></div>',
-				'<button type="button" class="timestate-dataset-add">Add data set</button>',
+			'<div class="timestate-dataset-layout">',
+				'<div class="timestate-dataset-sidebar">',
+					'<div class="timestate-dataset-selectors"></div>',
+					'<button type="button" class="timestate-dataset-add"><span class="timestate-dataset-add-plus">+</span><span>Add new data set</span><span class="timestate-dataset-add-caret">▾</span></button>',
+				'</div>',
+				'<div class="timestate-dataset-main">',
+					'<div class="timestate-dataset-rows"></div>',
+				'</div>',
 			'</div>',
-			'<div class="timestate-dataset-rows"></div>',
 		].join('');
 
 		insertAfter.parentNode.insertBefore(builder, insertAfter.nextSibling);
@@ -1898,14 +1968,6 @@
 
 		const rowsWrap = builder.querySelector('.timestate-dataset-rows');
 		const addBtn = builder.querySelector('.timestate-dataset-add');
-		const tabsWrap = builder.querySelector('.timestate-dataset-tabs');
-		tabsWrap?.addEventListener('wheel', (event) => {
-			if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
-				return;
-			}
-			tabsWrap.scrollLeft += event.deltaY;
-			event.preventDefault();
-		}, {passive: false});
 		let rows = parseDataSets(hiddenField.value);
 		if (rows.length === 0) {
 			rows = [{
