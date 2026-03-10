@@ -31,7 +31,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$segment_label_mode = $this->clampInt((int) ($this->fields_values['segment_label_mode'] ?? 0), 0, 2);
 		$segment_align = $this->clampInt((int) ($this->fields_values['segment_align'] ?? 1), 0, 2);
 		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 16, 200);
-		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 95), 0, 100);
+		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 90), 0, 100);
 		$line_width = $this->clampInt((int) ($this->fields_values['line_width'] ?? 0), 0, 10);
 		$page_size = $this->clampInt((int) ($this->fields_values['page_size'] ?? 0), 0, 500);
 		$tooltip_mode = $this->clampInt((int) ($this->fields_values['tooltip_mode'] ?? 0), 0, 2);

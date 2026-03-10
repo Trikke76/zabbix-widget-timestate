@@ -156,7 +156,7 @@ class WidgetForm extends CWidgetForm {
 					75 => _('75%'),
 					90 => _('90%'),
 					100 => _('100%')
-				]))->setDefault(95)
+				]))->setDefault(90)
 			)
 			->addField(
 				(new CWidgetFieldSelect('line_width', _('Segment border width'), [
