@@ -880,12 +880,13 @@
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
 			'.timestate-global-panel{margin-top:8px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;padding:10px;}',
 			'.timestate-global-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
-			'.timestate-global-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}',
-			'.timestate-global-field{display:flex;flex-direction:column;gap:4px;min-width:0;}',
-			'.timestate-global-field > span{font-size:12px;color:#d8d8d8;white-space:normal;word-break:break-word;}',
-			'.timestate-global-field select,.timestate-global-field input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
-			'.timestate-global-control{min-width:0;}',
-			'.timestate-global-control > *{max-width:100%;}',
+			'.timestate-global-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;}',
+			'.timestate-global-col{min-width:0;}',
+			'.timestate-global-table{width:100%;border-collapse:collapse;table-layout:fixed;}',
+			'.timestate-global-table td{padding:4px 0;vertical-align:middle;}',
+			'.timestate-global-table td.table-forms-td-left,.timestate-global-table td:first-child{width:45%;padding-right:10px;color:#d8d8d8;white-space:normal;word-break:break-word;}',
+			'.timestate-global-table td.table-forms-td-right,.timestate-global-table td.table-forms-field,.timestate-global-table td:last-child{width:55%;}',
+			'.timestate-global-table input,.timestate-global-table select{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-datasets-header{padding:10px 12px 8px;border-bottom:1px solid #3a3a3a;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 6px 0;}',
 			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0;}',
@@ -954,9 +955,9 @@
 			'.timestate-map-builder--dataset .timestate-map-builder-title{margin-bottom:6px;}',
 			'.timestate-map-builder--dataset .timestate-map-builder-help{margin-bottom:6px;}',
 			'.timestate-edit-wide .port24-pop{position:fixed!important;z-index:2147483000!important;}',
-			'@media (max-width: 1360px){.timestate-global-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
+			'@media (max-width: 1360px){.timestate-global-columns{grid-template-columns:minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
 			'@media (max-width: 1180px){.timestate-dataset-layout{grid-template-columns:minmax(0,1fr);}.timestate-dataset-sidebar{border-right:0;border-bottom:1px solid #3a3a3a;}.timestate-dataset-selectors{max-height:180px;}}',
-			'@media (max-width: 980px){.timestate-global-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
+			'@media (max-width: 980px){.timestate-global-columns{grid-template-columns:minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
 		document.head.appendChild(style);
 	}
@@ -1153,84 +1154,41 @@
 			{name: 'legend_show_duration', label: 'Legend: show total duration'},
 			{name: 'segment_label_mode', label: 'Segment labels'}
 		];
-		const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+		const rows = [];
+		for (const spec of specs) {
+			const row = getFieldRow(spec.name);
+			if (!row || rows.includes(row)) {
+				continue;
+			}
+			rows.push(row);
+		}
+		if (rows.length === 0) {
+			return;
+		}
 
 		const panel = document.createElement('div');
 		panel.className = 'timestate-global-panel';
 		panel.innerHTML = [
 			'<div class="timestate-global-title">Global options</div>',
-			'<div class="timestate-global-grid"></div>'
+			'<div class="timestate-global-columns">',
+				'<div class="timestate-global-col"><table class="timestate-global-table"><tbody></tbody></table></div>',
+				'<div class="timestate-global-col"><table class="timestate-global-table"><tbody></tbody></table></div>',
+			'</div>'
 		].join('');
-		const grid = panel.querySelector('.timestate-global-grid');
-
-		for (const spec of specs) {
-			let label = spec.label;
-			let controlNode = null;
-			const wanted = normalize(spec.label);
-			const labelCellMatch = Array.from(document.querySelectorAll('td.table-forms-td-left, td'))
-				.find((cell) => normalize(cell.textContent) === wanted && cell.closest('tr'));
-			const field = findField(spec.name);
-			const tableRow = labelCellMatch?.closest('tr') || field?.closest('tr') || null;
-			if (tableRow) {
-				const labelCell = tableRow.querySelector('td.table-forms-td-left, td:first-child');
-				let valueCell = tableRow.querySelector('td.table-forms-td-right, td.table-forms-field');
-				if (!valueCell) {
-					valueCell = Array.from(tableRow.querySelectorAll('td')).find((cell) => cell !== labelCell) || null;
-				}
-				if (!valueCell) {
-					valueCell = tableRow.querySelector('td:last-child');
-				}
-				if (labelCell) {
-					const text = String(labelCell.textContent || '').replace(/\s+/g, ' ').trim();
-					if (text !== '') {
-						label = text;
-					}
-				}
-				if (valueCell) {
-					controlNode = document.createElement('div');
-					controlNode.className = 'timestate-global-control';
-					if (valueCell.childNodes.length > 0) {
-						while (valueCell.firstChild) {
-							controlNode.appendChild(valueCell.firstChild);
-						}
-					}
-					else if (field) {
-						controlNode.appendChild(field);
-					}
-				}
-				else if (field) {
-					controlNode = document.createElement('div');
-					controlNode.className = 'timestate-global-control';
-					controlNode.appendChild(field);
-				}
-				tableRow.style.display = 'none';
-			}
-			else {
-				if (!field) {
-					continue;
-				}
-				const row = field.closest('.form-field, .form-grid, .fields-group, .field-row, li, .table-forms-td-right, .table-forms-field');
-				label = extractFieldLabel(field, spec.label);
-				if (row) {
-					row.style.display = 'none';
-				}
-				controlNode = document.createElement('div');
-				controlNode.className = 'timestate-global-control';
-				controlNode.appendChild(field);
-			}
-
-			const wrap = document.createElement('label');
-			wrap.className = 'timestate-global-field';
-			const text = document.createElement('span');
-			text.textContent = label;
-			wrap.appendChild(text);
-			if (controlNode) {
-				wrap.appendChild(controlNode);
-			}
-			grid.appendChild(wrap);
+		const inserted = insertFullWidthAfter(anchorRow, panel, 'timestate-global-row');
+		if (!inserted) {
+			return;
 		}
-
-		insertFullWidthAfter(anchorRow, panel, 'timestate-global-row');
+		const columns = panel.querySelectorAll('.timestate-global-col tbody');
+		const splitAt = Math.ceil(rows.length / 2);
+		for (let i = 0; i < rows.length; i++) {
+			const target = i < splitAt ? columns[0] : columns[1];
+			if (!target) {
+				continue;
+			}
+			rows[i].style.display = '';
+			target.appendChild(rows[i]);
+		}
 
 		window.timestate_widget_form._globalOptionsPanelBound = true;
 	}
@@ -2187,6 +2145,7 @@
 		}
 
 		ensureValueMappingBuilderStyle();
+		ensureGlobalOptionsPanel();
 		document.querySelectorAll('.timestate-dataset-suggest').forEach((el) => {
 			el.remove();
 		});
