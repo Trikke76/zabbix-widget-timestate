@@ -873,6 +873,7 @@
 			'.overlay-dialogue.timestate-edit-wide,.overlay-dialogue.modal.timestate-edit-wide{width:min(1880px,98vw)!important;max-width:min(1880px,98vw)!important;}',
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-datasets{margin-top:8px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;overflow:hidden;}',
+			'.timestate-datasets-row > td{padding-top:0!important;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
 			'.timestate-datasets-header{padding:10px 12px 8px;border-bottom:1px solid #3a3a3a;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 6px 0;}',
@@ -896,6 +897,7 @@
 			'.timestate-dataset-section-tab{border:1px solid transparent;background:transparent;color:#59afe1;border-radius:3px;padding:5px 10px;cursor:pointer;line-height:1.2;}',
 			'.timestate-dataset-section-tab:hover{background:rgba(89,175,225,.08);color:#8fd1f3;}',
 			'.timestate-dataset-section-tab.is-active{background:#323232;border-color:#4b4b4b;color:#e7edf3;font-weight:600;}',
+			'.timestate-dataset-sections{position:relative;}',
 			'.timestate-dataset-section{display:none;}',
 			'.timestate-dataset-section.is-active{display:block;}',
 			'.timestate-dataset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}',
@@ -1364,6 +1366,7 @@
 			stateMapField.value = serializeMappings(rows);
 			stateMapField.dispatchEvent(new Event('input', {bubbles: true}));
 			stateMapField.dispatchEvent(new Event('change', {bubbles: true}));
+			scheduleDataSetSectionHeightUpdate(rowsWrap.closest('.timestate-dataset-row'));
 		};
 
 		rowEl.addEventListener('input', sync);
@@ -1405,6 +1408,7 @@
 		if (!box) {
 			return;
 		}
+		const rowEl = box.closest('.timestate-dataset-row');
 
 		const metaEl = box.querySelector('.timestate-dataset-preview-meta');
 		const listEl = box.querySelector('.timestate-dataset-preview-list');
@@ -1420,6 +1424,7 @@
 			empty.className = 'timestate-dataset-preview-empty';
 			empty.textContent = 'No matching items.';
 			listEl.appendChild(empty);
+			scheduleDataSetSectionHeightUpdate(rowEl);
 			return;
 		}
 
@@ -1430,6 +1435,7 @@
 			chip.title = chip.textContent;
 			listEl.appendChild(chip);
 		}
+		scheduleDataSetSectionHeightUpdate(rowEl);
 	}
 
 	function getDataSetTabTitle(rowEl, index) {
@@ -1477,6 +1483,9 @@
 			if (headName) {
 				headName.textContent = tabTitle;
 			}
+			if (active) {
+				scheduleDataSetSectionHeightUpdate(rowEl);
+			}
 
 			const selectorBtn = document.createElement('button');
 			selectorBtn.type = 'button';
@@ -1503,6 +1512,71 @@
 		}
 	}
 
+	function updateDataSetSectionMinHeight(rowEl) {
+		if (!rowEl) {
+			return;
+		}
+
+		const wrap = rowEl.querySelector('.timestate-dataset-sections');
+		if (!wrap) {
+			return;
+		}
+
+		const sections = Array.from(rowEl.querySelectorAll('.timestate-dataset-section'));
+		if (sections.length === 0) {
+			return;
+		}
+
+		const wrapWidth = Math.max(320, Math.round(wrap.getBoundingClientRect().width || 0));
+		let maxHeight = 0;
+		for (const section of sections) {
+			const wasActive = section.classList.contains('is-active');
+			const prevDisplay = section.style.display;
+			const prevVisibility = section.style.visibility;
+			const prevPosition = section.style.position;
+			const prevLeft = section.style.left;
+			const prevTop = section.style.top;
+			const prevWidth = section.style.width;
+
+			if (!wasActive) {
+				section.style.display = 'block';
+				section.style.visibility = 'hidden';
+				section.style.position = 'absolute';
+				section.style.left = '-99999px';
+				section.style.top = '0';
+				section.style.width = `${wrapWidth}px`;
+			}
+
+			maxHeight = Math.max(maxHeight, Math.ceil(section.scrollHeight || 0));
+
+			if (!wasActive) {
+				section.style.display = prevDisplay;
+				section.style.visibility = prevVisibility;
+				section.style.position = prevPosition;
+				section.style.left = prevLeft;
+				section.style.top = prevTop;
+				section.style.width = prevWidth;
+			}
+		}
+
+		if (maxHeight > 0) {
+			wrap.style.minHeight = `${maxHeight}px`;
+		}
+	}
+
+	function scheduleDataSetSectionHeightUpdate(rowEl) {
+		if (!rowEl) {
+			return;
+		}
+		if (rowEl._timestateHeightRaf) {
+			return;
+		}
+		rowEl._timestateHeightRaf = window.requestAnimationFrame(() => {
+			rowEl._timestateHeightRaf = 0;
+			updateDataSetSectionMinHeight(rowEl);
+		});
+	}
+
 	function initDataSetSectionTabs(rowEl) {
 		if (!rowEl) {
 			return;
@@ -1526,6 +1600,7 @@
 				const active = String(panel.dataset.section || '') === target;
 				panel.classList.toggle('is-active', active);
 			}
+			scheduleDataSetSectionHeightUpdate(rowEl);
 		};
 
 		const initial = String(rowEl.dataset.activeSection || 'filter');
@@ -1875,6 +1950,7 @@
 			hiddenField.value = serializeDataSets(rows);
 			hiddenField.dispatchEvent(new Event('input', {bubbles: true}));
 			hiddenField.dispatchEvent(new Event('change', {bubbles: true}));
+			scheduleDataSetSectionHeightUpdate(rowEl);
 		};
 
 		rowEl.addEventListener('input', sync);
@@ -1918,6 +1994,7 @@
 		});
 		renderDataSetTabs(builder, rowsWrap, requestedActiveIndex);
 		sync();
+		scheduleDataSetSectionHeightUpdate(rowEl);
 		schedulePreview();
 	}
 
@@ -1943,6 +2020,10 @@
 		const anchorField = findField('item_name_search') || findField('item_key_search');
 		const anchorWrap = anchorField ? anchorField.closest('.form-field') : null;
 		const insertAfter = anchorWrap && anchorWrap.parentNode ? anchorWrap : hiddenWrap;
+		const anchorRow = getFieldRow(anchorField ? (anchorField.name || '') : '')
+			|| getFieldRow('item_name_search')
+			|| getFieldRow('item_key_search')
+			|| getFieldRow('datasets_json');
 
 		const builder = document.createElement('div');
 		builder.id = 'timestate-datasets';
@@ -1963,7 +2044,18 @@
 			'</div>',
 		].join('');
 
-		insertAfter.parentNode.insertBefore(builder, insertAfter.nextSibling);
+		if (anchorRow && anchorRow.tagName === 'TR' && anchorRow.parentNode) {
+			const fullRow = document.createElement('tr');
+			fullRow.className = 'timestate-datasets-row';
+			const fullCell = document.createElement('td');
+			fullCell.colSpan = 2;
+			fullCell.appendChild(builder);
+			fullRow.appendChild(fullCell);
+			anchorRow.parentNode.insertBefore(fullRow, anchorRow.nextSibling);
+		}
+		else {
+			insertAfter.parentNode.insertBefore(builder, insertAfter.nextSibling);
+		}
 		hiddenWrap.style.display = 'none';
 
 		const rowsWrap = builder.querySelector('.timestate-dataset-rows');
@@ -2042,6 +2134,7 @@
 		}
 
 		hideLabelCellsByText([
+			'Data sets',
 			'Item key filter (substring)',
 			'Item name filter (substring)',
 			'Lookback (hours)',
