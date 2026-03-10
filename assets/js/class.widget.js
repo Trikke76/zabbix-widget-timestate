@@ -121,6 +121,7 @@ window.CWidgetTimeState = class extends CWidget {
 				const rawLabel = String(seg.label || seg.state || 'State');
 				const rawValue = String(seg.raw_value ?? '').trim();
 				const valueText = rawValue !== '' ? rawValue : rawLabel;
+				const displayText = rawLabel !== '' ? rawLabel : valueText;
 				const legendLabel = this._isNumericLabel(rawLabel) ? 'Value' : rawLabel;
 				const duration = Math.max(0, tTo - tFrom);
 
@@ -130,13 +131,14 @@ window.CWidgetTimeState = class extends CWidget {
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
 				block.style.background = color;
-				this._renderSegmentLabel(block, valueText, width, segmentLabelMode);
+				this._renderSegmentLabel(block, displayText, width, segmentLabelMode);
 				if (tooltipMode !== 2) {
 					this._bindTooltip(block, tooltip, {
 						mode: tooltipMode,
 						sortOrder: tooltipSortOrder,
 						ts: Math.floor((tFrom + tTo) / 2),
 						rowLabel: this._shortRowLabel(fullLabel),
+						displayText,
 						valueText,
 						tFrom,
 						tTo,
@@ -579,14 +581,17 @@ window.CWidgetTimeState = class extends CWidget {
 			}
 		}
 
+		const displayText = String(context?.displayText || context?.valueText || '-');
 		const valueText = String(context?.valueText || '-');
 		const tFrom = Number(context?.tFrom || 0);
 		const tTo = Number(context?.tTo || 0);
-		return (
-			`<div><strong>Value:</strong> ${this._escape(valueText)}</div>`
-			+ `<div><strong>From:</strong> ${this._escape(this._fmt(tFrom))}</div>`
-			+ `<div><strong>To:</strong> ${this._escape(this._fmt(tTo))}</div>`
-		);
+		let html = `<div><strong>Display:</strong> ${this._escape(displayText)}</div>`;
+		if (valueText !== '' && valueText !== displayText) {
+			html += `<div><strong>Value:</strong> ${this._escape(valueText)}</div>`;
+		}
+		html += `<div><strong>From:</strong> ${this._escape(this._fmt(tFrom))}</div>`;
+		html += `<div><strong>To:</strong> ${this._escape(this._fmt(tTo))}</div>`;
+		return html;
 	}
 
 	_collectTooltipEntries(rows, ts, sortOrder) {
@@ -607,9 +612,12 @@ window.CWidgetTimeState = class extends CWidget {
 
 				const rawLabel = String(seg?.label || seg?.state || 'State');
 				const rawValue = String(seg?.raw_value ?? '').trim();
+				const rawLabel = String(seg?.label || seg?.state || 'State');
+				const rawValue = String(seg?.raw_value ?? '').trim();
+				const displayText = rawLabel !== '' ? rawLabel : rawValue;
 				out.push({
 					rowLabel,
-					valueText: rawValue !== '' ? rawValue : rawLabel,
+					valueText: displayText,
 					color: String(seg?.color || '#607D8B')
 				});
 				break;

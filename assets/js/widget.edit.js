@@ -1254,6 +1254,15 @@
 			const tdControl = document.createElement('td');
 			tdControl.className = 'table-forms-td-right';
 			tdControl.appendChild(controlNode);
+			if (entry.spec.name === 'row_height') {
+				const rowHeightInput = tdControl.querySelector('input');
+				if (rowHeightInput) {
+					rowHeightInput.maxLength = 4;
+					rowHeightInput.size = 4;
+					rowHeightInput.style.width = '72px';
+					rowHeightInput.style.minWidth = '72px';
+				}
+			}
 			tr.appendChild(tdLabel);
 			tr.appendChild(tdControl);
 			target.appendChild(tr);
