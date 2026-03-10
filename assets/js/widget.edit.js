@@ -873,8 +873,15 @@
 			'.overlay-dialogue.timestate-edit-wide,.overlay-dialogue.modal.timestate-edit-wide{width:min(1880px,98vw)!important;max-width:min(1880px,98vw)!important;}',
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-datasets{margin-top:8px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;overflow:hidden;}',
-			'.timestate-datasets-row > td{padding-top:0!important;}',
+			'.timestate-datasets-row > td{padding-top:0!important;padding-left:0!important;padding-right:0!important;}',
+			'.timestate-global-row > td{padding-top:0!important;padding-left:0!important;padding-right:0!important;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
+			'.timestate-global-panel{margin-top:8px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;padding:10px;}',
+			'.timestate-global-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
+			'.timestate-global-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}',
+			'.timestate-global-field{display:flex;flex-direction:column;gap:4px;min-width:0;}',
+			'.timestate-global-field > span{font-size:12px;color:#d8d8d8;white-space:normal;word-break:break-word;}',
+			'.timestate-global-field select,.timestate-global-field input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-datasets-header{padding:10px 12px 8px;border-bottom:1px solid #3a3a3a;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 6px 0;}',
 			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0;}',
@@ -943,9 +950,9 @@
 			'.timestate-map-builder--dataset .timestate-map-builder-title{margin-bottom:6px;}',
 			'.timestate-map-builder--dataset .timestate-map-builder-help{margin-bottom:6px;}',
 			'.timestate-edit-wide .port24-pop{position:fixed!important;z-index:2147483000!important;}',
-			'@media (max-width: 1360px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
+			'@media (max-width: 1360px){.timestate-global-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
 			'@media (max-width: 1180px){.timestate-dataset-layout{grid-template-columns:minmax(0,1fr);}.timestate-dataset-sidebar{border-right:0;border-bottom:1px solid #3a3a3a;}.timestate-dataset-selectors{max-height:180px;}}',
-			'@media (max-width: 980px){.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
+			'@media (max-width: 980px){.timestate-global-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
 		document.head.appendChild(style);
 	}
@@ -1055,6 +1062,98 @@
 		if (body) {
 			body.style.maxWidth = 'none';
 		}
+	}
+
+	function extractFieldLabel(field, fallback) {
+		if (!field) {
+			return fallback;
+		}
+
+		const row = field.closest(
+			'.form-field, .form-grid, .fields-group, .field-row, tr, li, .table-forms-td-right, .table-forms-field'
+		);
+		if (!row) {
+			return fallback;
+		}
+
+		const labelCell = row.previousElementSibling;
+		if (labelCell && (labelCell.matches('td') || labelCell.classList.contains('table-forms-td-left'))) {
+			const text = String(labelCell.textContent || '').replace(/\s+/g, ' ').trim();
+			if (text !== '') {
+				return text;
+			}
+		}
+
+		return fallback;
+	}
+
+	function ensureGlobalOptionsPanel() {
+		if (window.timestate_widget_form._globalOptionsPanelBound) {
+			return;
+		}
+
+		const anchorRow = getFieldRow('hostids') || getFieldRow('row_sort');
+		if (!anchorRow || anchorRow.tagName !== 'TR' || !anchorRow.parentNode) {
+			return;
+		}
+
+		const specs = [
+			{name: 'row_sort', label: 'Row sorting'},
+			{name: 'row_group_mode', label: 'Row grouping'},
+			{name: 'row_group_collapsed', label: 'Groups collapsed by default'},
+			{name: 'axis_tick_step', label: 'Time axis: tick interval'},
+			{name: 'axis_label_density', label: 'Time axis: label density'},
+			{name: 'axis_grid_mode', label: 'Show grid lines'},
+			{name: 'legend_mode', label: 'Legend mode'},
+			{name: 'legend_show_count', label: 'Legend: show count'},
+			{name: 'legend_show_duration', label: 'Legend: show total duration'},
+			{name: 'segment_label_mode', label: 'Segment labels'}
+		];
+
+		const panel = document.createElement('div');
+		panel.className = 'timestate-global-panel';
+		panel.innerHTML = [
+			'<div class="timestate-global-title">Global options</div>',
+			'<div class="timestate-global-grid"></div>'
+		].join('');
+		const grid = panel.querySelector('.timestate-global-grid');
+
+		for (const spec of specs) {
+			const field = findField(spec.name);
+			if (!field) {
+				continue;
+			}
+
+			const row = field.closest(
+				'.form-field, .form-grid, .fields-group, .field-row, tr, li, .table-forms-td-right, .table-forms-field'
+			);
+			const label = extractFieldLabel(field, spec.label);
+			if (row) {
+				const labelCell = row.previousElementSibling;
+				if (labelCell && (labelCell.matches('td') || labelCell.classList.contains('table-forms-td-left'))) {
+					labelCell.style.display = 'none';
+				}
+				row.style.display = 'none';
+			}
+
+			const wrap = document.createElement('label');
+			wrap.className = 'timestate-global-field';
+			const text = document.createElement('span');
+			text.textContent = label;
+			wrap.appendChild(text);
+			wrap.appendChild(field);
+			grid.appendChild(wrap);
+		}
+
+		const fullRow = document.createElement('tr');
+		fullRow.className = 'timestate-global-row';
+		const fullCell = document.createElement('td');
+		fullCell.colSpan = 2;
+		fullCell.appendChild(panel);
+		fullRow.appendChild(fullCell);
+		anchorRow.parentNode.insertBefore(fullRow, anchorRow.nextSibling);
+
+		window.timestate_widget_form._globalOptionsPanelBound = true;
 	}
 
 	function parseMappings(raw) {
@@ -2009,6 +2108,7 @@
 		}
 
 		ensureValueMappingBuilderStyle();
+		ensureGlobalOptionsPanel();
 		document.querySelectorAll('.timestate-dataset-suggest').forEach((el) => {
 			el.remove();
 		});
@@ -2101,19 +2201,6 @@
 			}, newIndex);
 		});
 
-		// Keep global row sorting, but move it close to Hosts.
-		moveFieldRowBefore('row_sort', 'item_key_search');
-		moveFieldRowBefore('row_group_mode', 'item_key_search');
-		moveFieldRowBefore('row_group_collapsed', 'item_key_search');
-		moveFieldRowBefore('axis_tick_step', 'item_key_search');
-		moveFieldRowBefore('axis_label_density', 'item_key_search');
-		moveFieldRowBefore('legend_mode', 'item_key_search');
-		moveFieldRowBefore('legend_show_count', 'item_key_search');
-		moveFieldRowBefore('legend_show_duration', 'item_key_search');
-		moveFieldRowBefore('segment_label_mode', 'item_key_search');
-		showFieldRow('row_group_mode');
-		showFieldRow('row_group_collapsed');
-
 		for (const legacy of [
 			'item_key_search',
 			'item_name_search',
@@ -2135,6 +2222,16 @@
 
 		hideLabelCellsByText([
 			'Data sets',
+			'Row sorting',
+			'Row grouping',
+			'Groups collapsed by default',
+			'Time axis: tick interval',
+			'Time axis: label density',
+			'Show grid lines',
+			'Legend mode',
+			'Legend: show count',
+			'Legend: show total duration',
+			'Segment labels',
 			'Item key filter (substring)',
 			'Item name filter (substring)',
 			'Lookback (hours)',
