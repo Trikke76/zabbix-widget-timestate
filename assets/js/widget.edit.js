@@ -1132,18 +1132,7 @@
 	}
 
 	function ensureGlobalOptionsPanel() {
-		const existing = document.querySelector('.timestate-global-panel');
-		if (existing) {
-			const holder = existing.closest('.timestate-global-row');
-			if (holder) {
-				holder.remove();
-			}
-			else {
-				existing.remove();
-			}
-			window.timestate_widget_form._globalOptionsPanelBound = false;
-		}
-		if (window.timestate_widget_form._globalOptionsPanelBound) {
+		if (window.timestate_widget_form._globalOptionsPanelBound || document.querySelector('.timestate-global-panel')) {
 			return;
 		}
 
@@ -1164,6 +1153,7 @@
 			{name: 'legend_show_duration', label: 'Legend: show total duration'},
 			{name: 'segment_label_mode', label: 'Segment labels'}
 		];
+		const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
 
 		const panel = document.createElement('div');
 		panel.className = 'timestate-global-panel';
@@ -1174,13 +1164,13 @@
 		const grid = panel.querySelector('.timestate-global-grid');
 
 		for (const spec of specs) {
-			const field = findField(spec.name);
-			if (!field) {
-				continue;
-			}
 			let label = spec.label;
 			let controlNode = null;
-			const tableRow = field.closest('tr');
+			const wanted = normalize(spec.label);
+			const labelCellMatch = Array.from(document.querySelectorAll('td.table-forms-td-left, td'))
+				.find((cell) => normalize(cell.textContent) === wanted && cell.closest('tr'));
+			const field = findField(spec.name);
+			const tableRow = labelCellMatch?.closest('tr') || field?.closest('tr') || null;
 			if (tableRow) {
 				const labelCell = tableRow.querySelector('td.table-forms-td-left, td:first-child');
 				let valueCell = tableRow.querySelector('td.table-forms-td-right, td.table-forms-field');
@@ -1204,11 +1194,11 @@
 							controlNode.appendChild(valueCell.firstChild);
 						}
 					}
-					else {
+					else if (field) {
 						controlNode.appendChild(field);
 					}
 				}
-				else {
+				else if (field) {
 					controlNode = document.createElement('div');
 					controlNode.className = 'timestate-global-control';
 					controlNode.appendChild(field);
@@ -1216,6 +1206,9 @@
 				tableRow.style.display = 'none';
 			}
 			else {
+				if (!field) {
+					continue;
+				}
 				const row = field.closest('.form-field, .form-grid, .fields-group, .field-row, li, .table-forms-td-right, .table-forms-field');
 				label = extractFieldLabel(field, spec.label);
 				if (row) {
@@ -2299,16 +2292,6 @@
 
 		hideLabelCellsByText([
 			'Data sets',
-			'Row sorting',
-			'Row grouping',
-			'Groups collapsed by default',
-			'Time axis: tick interval',
-			'Time axis: label density',
-			'Show grid lines',
-			'Legend mode',
-			'Legend: show count',
-			'Legend: show total duration',
-			'Segment labels',
 			'Item key filter (substring)',
 			'Item name filter (substring)',
 			'Lookback (hours)',
