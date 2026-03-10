@@ -61,32 +61,18 @@ window.CWidgetTimeState = class extends CWidget {
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
 		const segmentLabelMode = Math.max(0, Math.min(2, Number(model.segment_label_mode ?? 0)));
-		const segmentAlign = Math.max(0, Math.min(2, Number(model.segment_align ?? 1)));
 		const rowGroupMode = Math.max(0, Math.min(2, Number(model.row_group_mode ?? 0)));
 		const rowGroupCollapsed = Number(model.row_group_collapsed ?? 0) === 1;
-
-		// New feature values
-		const rowHeight = Math.max(16, Number(model.row_height ?? 40));
-		const fillOpacity = Math.max(0, Math.min(100, Number(model.fill_opacity ?? 95))) / 100;
-		const lineWidth = Math.max(0, Math.min(10, Number(model.line_width ?? 0)));
-		const pageSize = Math.max(0, Number(model.page_size ?? 0));
-		const tooltipMode = Math.max(0, Math.min(2, Number(model.tooltip_mode ?? 0)));
 
 		const legend = new Map();
 		const table = document.createElement('div');
 		table.className = 'timestate__table';
-
-		// Tooltip: create one shared tooltip element
-		const tooltip = tooltipMode !== 2 ? this._createTooltip(root) : null;
-
-		// For "All" tooltip mode we need a reference to all rendered rows for cross-row lookup
-		const allSegmentsByRow = [];
+		const tooltip = this._createTooltip(root);
 
 		const renderedRows = [];
 		for (const row of rows) {
 			const rowEl = document.createElement('div');
 			rowEl.className = 'timestate__row';
-			rowEl.style.setProperty('--ts-row-height', `${rowHeight}px`);
 
 			const labelEl = document.createElement('div');
 			labelEl.className = 'timestate__label';
@@ -99,8 +85,6 @@ window.CWidgetTimeState = class extends CWidget {
 			this._addLaneGrid(lane, ticks, timeFrom, range, showLaneGrid);
 
 			const segments = Array.isArray(row.segments) ? row.segments : [];
-			const rowSegmentData = [];
-
 			for (const seg of segments) {
 				const tFrom = Number(seg.t_from || 0);
 				const tTo = Number(seg.t_to || 0);
@@ -122,22 +106,11 @@ window.CWidgetTimeState = class extends CWidget {
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
 				block.style.background = color;
-				block.style.opacity = String(fillOpacity);
-				if (lineWidth > 0) {
-					block.style.outline = `${lineWidth}px solid rgba(0,0,0,0.25)`;
-					block.style.outlineOffset = '-1px';
-				}
+				const tooltipText = `Value: ${valueText}\nFrom: ${this._fmt(tFrom)}\nTo: ${this._fmt(tTo)}`;
+				this._bindTooltip(block, tooltip, tooltipText);
+				this._renderSegmentLabel(block, rawLabel, width, segmentLabelMode);
 
-				if (tooltip && tooltipMode === 0) {
-					// Single mode: tooltip only shows hovered segment
-					const tooltipText = `Value: ${valueText}\nFrom: ${this._fmt(tFrom)}\nTo: ${this._fmt(tTo)}`;
-					this._bindTooltip(block, tooltip, tooltipText);
-				}
-
-				this._renderSegmentLabel(block, rawLabel, width, segmentLabelMode, segmentAlign);
 				lane.appendChild(block);
-
-				rowSegmentData.push({block, tFrom, tTo, color, valueText, rowLabel: fullLabel});
 
 				const entry = legend.get(legendLabel) || {label: legendLabel, color, count: 0, duration: 0};
 				entry.count += 1;
@@ -148,8 +121,6 @@ window.CWidgetTimeState = class extends CWidget {
 				legend.set(legendLabel, entry);
 			}
 
-			allSegmentsByRow.push({row, rowEl, segmentData: rowSegmentData});
-
 			rowEl.appendChild(labelEl);
 			rowEl.appendChild(lane);
 			renderedRows.push({
@@ -158,72 +129,52 @@ window.CWidgetTimeState = class extends CWidget {
 			});
 		}
 
-		// "All" tooltip mode: bind cross-row tooltip to each segment
-		if (tooltip && tooltipMode === 1) {
-			this._bindAllTooltips(allSegmentsByRow, tooltip, timeFrom, timeTo, range);
+		if (rowGroupMode === 0) {
+			for (const entry of renderedRows) {
+				table.appendChild(entry.rowEl);
+			}
 		}
-
-		// Build the visible rows set (pagination or all)
-		let currentPage = 0;
-		const totalRows = renderedRows.length;
-		const effectivePageSize = pageSize > 0 ? pageSize : totalRows;
-		const totalPages = Math.max(1, Math.ceil(totalRows / effectivePageSize));
-
-		const renderPage = (page) => {
-			currentPage = Math.max(0, Math.min(page, totalPages - 1));
-			table.innerHTML = '';
-
-			const start = currentPage * effectivePageSize;
-			const end = Math.min(start + effectivePageSize, totalRows);
-			const pageRows = renderedRows.slice(start, end);
-
-			if (rowGroupMode === 0) {
-				for (const entry of pageRows) {
-					table.appendChild(entry.rowEl);
+		else {
+			const groups = new Map();
+			for (const entry of renderedRows) {
+				const groupName = this._resolveGroupName(entry.row, rowGroupMode);
+				if (!groups.has(groupName)) {
+					groups.set(groupName, []);
 				}
+				groups.get(groupName).push(entry.rowEl);
 			}
-			else {
-				const groups = new Map();
-				for (const entry of pageRows) {
-					const groupName = this._resolveGroupName(entry.row, rowGroupMode);
-					if (!groups.has(groupName)) {
-						groups.set(groupName, []);
-					}
-					groups.get(groupName).push(entry.rowEl);
+
+			for (const [groupName, rowEls] of groups.entries()) {
+				const groupEl = document.createElement('section');
+				groupEl.className = 'timestate__group';
+				if (rowGroupCollapsed) {
+					groupEl.classList.add('is-collapsed');
 				}
 
-				for (const [groupName, rowEls] of groups.entries()) {
-					const groupEl = document.createElement('section');
-					groupEl.className = 'timestate__group';
-					if (rowGroupCollapsed) {
-						groupEl.classList.add('is-collapsed');
-					}
+				const headBtn = document.createElement('button');
+				headBtn.type = 'button';
+				headBtn.className = 'timestate__group-head';
+				headBtn.innerHTML = `<span class="timestate__group-title">${this._escape(groupName)}</span><span class="timestate__group-meta">${rowEls.length} row(s)</span>`;
 
-					const headBtn = document.createElement('button');
-					headBtn.type = 'button';
-					headBtn.className = 'timestate__group-head';
-					headBtn.innerHTML = `<span class="timestate__group-title">${this._escape(groupName)}</span><span class="timestate__group-meta">${rowEls.length} row(s)</span>`;
-
-					const body = document.createElement('div');
-					body.className = 'timestate__group-body';
-					for (const rowEl of rowEls) {
-						body.appendChild(rowEl);
-					}
-					if (rowGroupCollapsed) {
-						body.style.display = 'none';
-					}
-
-					headBtn.addEventListener('click', () => {
-						const collapsed = groupEl.classList.toggle('is-collapsed');
-						body.style.display = collapsed ? 'none' : '';
-					});
-
-					groupEl.appendChild(headBtn);
-					groupEl.appendChild(body);
-					table.appendChild(groupEl);
+				const body = document.createElement('div');
+				body.className = 'timestate__group-body';
+				for (const rowEl of rowEls) {
+					body.appendChild(rowEl);
 				}
+				if (rowGroupCollapsed) {
+					body.style.display = 'none';
+				}
+
+				headBtn.addEventListener('click', () => {
+					const collapsed = groupEl.classList.toggle('is-collapsed');
+					body.style.display = collapsed ? 'none' : '';
+				});
+
+				groupEl.appendChild(headBtn);
+				groupEl.appendChild(body);
+				table.appendChild(groupEl);
 			}
-		};
+		}
 
 		const axisRow = document.createElement('div');
 		axisRow.className = 'timestate__row timestate__axis-row';
@@ -237,25 +188,6 @@ window.CWidgetTimeState = class extends CWidget {
 		root.appendChild(axisRow);
 		root.appendChild(table);
 
-		renderPage(0);
-
-		// Pagination controls
-		if (pageSize > 0 && totalPages > 1) {
-			const pager = this._buildPager(currentPage, totalPages, (page) => {
-				renderPage(page);
-				// Update pager state
-				pager.querySelectorAll('.timestate__page-btn').forEach((btn) => {
-					btn.classList.toggle('is-active', Number(btn.dataset.page) === currentPage);
-					btn.disabled = Number(btn.dataset.page) === currentPage;
-				});
-				pager.querySelector('.timestate__page-prev').disabled = currentPage === 0;
-				pager.querySelector('.timestate__page-next').disabled = currentPage === totalPages - 1;
-				pager.querySelector('.timestate__page-info').textContent =
-					`Page ${currentPage + 1} of ${totalPages} (${start + 1}–${Math.min(start + effectivePageSize, totalRows)} of ${totalRows} rows)`;
-			});
-			root.appendChild(pager);
-		}
-
 		if (legendMode !== 2 && legend.size > 0) {
 			const legendEntries = Array.from(legend.values());
 			if (legendMode === 1) {
@@ -263,224 +195,6 @@ window.CWidgetTimeState = class extends CWidget {
 			}
 			else if (legendEntries.length <= 40) {
 				root.appendChild(this._renderLegendList(legendEntries, legendShowCount, legendShowDuration));
-			}
-		}
-	}
-
-	_buildPager(initialPage, totalPages, onNavigate) {
-		const pager = document.createElement('div');
-		pager.className = 'timestate__pager';
-
-		const prevBtn = document.createElement('button');
-		prevBtn.type = 'button';
-		prevBtn.className = 'timestate__page-prev';
-		prevBtn.textContent = '‹ Prev';
-		prevBtn.disabled = initialPage === 0;
-		prevBtn.addEventListener('click', () => onNavigate(
-			Number(pager.querySelector('.timestate__page-btn.is-active')?.dataset.page ?? 0) - 1
-		));
-
-		const pageInfo = document.createElement('span');
-		pageInfo.className = 'timestate__page-info';
-
-		const nextBtn = document.createElement('button');
-		nextBtn.type = 'button';
-		nextBtn.className = 'timestate__page-next';
-		nextBtn.textContent = 'Next ›';
-		nextBtn.disabled = initialPage === totalPages - 1;
-		nextBtn.addEventListener('click', () => onNavigate(
-			Number(pager.querySelector('.timestate__page-btn.is-active')?.dataset.page ?? 0) + 1
-		));
-
-		// Page number buttons (max 7 visible with ellipsis)
-		const btnGroup = document.createElement('div');
-		btnGroup.className = 'timestate__page-btns';
-
-		const maxVisible = 7;
-		const buildPageBtns = (activePage) => {
-			btnGroup.innerHTML = '';
-			const pages = this._pagerPages(activePage, totalPages, maxVisible);
-			for (const p of pages) {
-				if (p === null) {
-					const sep = document.createElement('span');
-					sep.className = 'timestate__page-sep';
-					sep.textContent = '…';
-					btnGroup.appendChild(sep);
-				}
-				else {
-					const btn = document.createElement('button');
-					btn.type = 'button';
-					btn.className = `timestate__page-btn${p === activePage ? ' is-active' : ''}`;
-					btn.dataset.page = String(p);
-					btn.textContent = String(p + 1);
-					btn.disabled = p === activePage;
-					btn.addEventListener('click', () => onNavigate(p));
-					btnGroup.appendChild(btn);
-				}
-			}
-		};
-
-		buildPageBtns(initialPage);
-
-		// Wrap the original onNavigate to also rebuild page buttons
-		const originalNavigate = onNavigate;
-		const wrappedNavigate = (page) => {
-			originalNavigate(page);
-			buildPageBtns(page);
-		};
-		prevBtn.replaceWith(prevBtn.cloneNode(true));
-		nextBtn.replaceWith(nextBtn.cloneNode(true));
-
-		// Re-add listeners with wrapped navigate
-		const prev2 = document.createElement('button');
-		prev2.type = 'button';
-		prev2.className = 'timestate__page-prev';
-		prev2.textContent = '‹ Prev';
-		prev2.disabled = initialPage === 0;
-		prev2.addEventListener('click', () => {
-			const active = Number(pager.querySelector('.timestate__page-btn.is-active')?.dataset.page ?? 0);
-			if (active > 0) {
-				wrappedNavigate(active - 1);
-				prev2.disabled = active - 1 === 0;
-				next2.disabled = false;
-			}
-		});
-
-		const next2 = document.createElement('button');
-		next2.type = 'button';
-		next2.className = 'timestate__page-next';
-		next2.textContent = 'Next ›';
-		next2.disabled = initialPage === totalPages - 1;
-		next2.addEventListener('click', () => {
-			const active = Number(pager.querySelector('.timestate__page-btn.is-active')?.dataset.page ?? 0);
-			if (active < totalPages - 1) {
-				wrappedNavigate(active + 1);
-				next2.disabled = active + 1 === totalPages - 1;
-				prev2.disabled = false;
-			}
-		});
-
-		// Rebuild buildPageBtns to also control prev/next disabled state
-		const buildPageBtns2 = (activePage) => {
-			btnGroup.innerHTML = '';
-			const pages = this._pagerPages(activePage, totalPages, maxVisible);
-			for (const p of pages) {
-				if (p === null) {
-					const sep = document.createElement('span');
-					sep.className = 'timestate__page-sep';
-					sep.textContent = '…';
-					btnGroup.appendChild(sep);
-				}
-				else {
-					const btn = document.createElement('button');
-					btn.type = 'button';
-					btn.className = `timestate__page-btn${p === activePage ? ' is-active' : ''}`;
-					btn.dataset.page = String(p);
-					btn.textContent = String(p + 1);
-					btn.disabled = p === activePage;
-					btn.addEventListener('click', () => {
-						onNavigate(p);
-						buildPageBtns2(p);
-						prev2.disabled = p === 0;
-						next2.disabled = p === totalPages - 1;
-						pageInfo.textContent = this._pagerInfoText(p, totalPages);
-					});
-					btnGroup.appendChild(btn);
-				}
-			}
-			pageInfo.textContent = this._pagerInfoText(activePage, totalPages);
-		};
-
-		buildPageBtns2(initialPage);
-
-		pager.appendChild(prev2);
-		pager.appendChild(btnGroup);
-		pager.appendChild(next2);
-		pager.appendChild(pageInfo);
-		return pager;
-	}
-
-	_pagerInfoText(page, totalPages) {
-		return `Page ${page + 1} / ${totalPages}`;
-	}
-
-	_pagerPages(activePage, totalPages, maxVisible) {
-		if (totalPages <= maxVisible) {
-			return Array.from({length: totalPages}, (_, i) => i);
-		}
-		const pages = [];
-		const half = Math.floor(maxVisible / 2);
-		let start = Math.max(0, activePage - half);
-		let end = start + maxVisible - 1;
-		if (end >= totalPages) {
-			end = totalPages - 1;
-			start = Math.max(0, end - maxVisible + 1);
-		}
-		if (start > 0) {
-			pages.push(0);
-			if (start > 1) {
-				pages.push(null);
-			}
-		}
-		for (let i = start; i <= end; i++) {
-			pages.push(i);
-		}
-		if (end < totalPages - 1) {
-			if (end < totalPages - 2) {
-				pages.push(null);
-			}
-			pages.push(totalPages - 1);
-		}
-		return pages;
-	}
-
-	_bindAllTooltips(allSegmentsByRow, tooltip, timeFrom, timeTo, range) {
-		// For each segment block, show all rows' state at the hovered timestamp
-		for (const {segmentData, row} of allSegmentsByRow) {
-			for (const {block, tFrom, tTo} of segmentData) {
-				const show = (event) => {
-					// Determine approximate time position of mouse within the lane
-					const lane = block.closest('.timestate__lane');
-					const laneRect = lane ? lane.getBoundingClientRect() : null;
-					let hoverTs = (tFrom + tTo) / 2;
-					if (laneRect) {
-						const relX = Math.max(0, Math.min(1, (event.clientX - laneRect.left) / laneRect.width));
-						hoverTs = timeFrom + relX * (timeTo - timeFrom);
-					}
-
-					const lines = [];
-					for (const otherRow of allSegmentsByRow) {
-						const matchingSeg = otherRow.segmentData.find(
-							(s) => hoverTs >= s.tFrom && hoverTs < s.tTo
-						);
-						const label = this._shortRowLabel(String(otherRow.row.row_label || ''));
-						if (matchingSeg) {
-							const marker = otherRow.row === row ? '▶ ' : '  ';
-							lines.push(`${marker}${label}: ${matchingSeg.valueText}`);
-						}
-					}
-
-					tooltip.innerHTML = '';
-					tooltip.textContent = lines.join('\n');
-					tooltip.style.display = 'block';
-					this._positionTooltip(tooltip, event);
-				};
-
-				const move = (event) => {
-					if (tooltip.style.display !== 'block') {
-						return;
-					}
-					show(event);
-					this._positionTooltip(tooltip, event);
-				};
-
-				const hide = () => {
-					tooltip.style.display = 'none';
-				};
-
-				block.addEventListener('mouseenter', show);
-				block.addEventListener('mousemove', move);
-				block.addEventListener('mouseleave', hide);
 			}
 		}
 	}
@@ -594,6 +308,7 @@ window.CWidgetTimeState = class extends CWidget {
 			});
 		}
 
+		// First pass: keep start/end and a sparse set of middle ticks.
 		const kept = [];
 		for (const node of nodes) {
 			if (node.edge) {
@@ -611,6 +326,7 @@ window.CWidgetTimeState = class extends CWidget {
 			prevLeft = node.left;
 		}
 
+		// Second pass: remove overlaps between adjacent kept labels.
 		const finalNodes = [];
 		let lastLabelLen = 0;
 		let lastLeft = -100;
@@ -620,6 +336,7 @@ window.CWidgetTimeState = class extends CWidget {
 			if (lastLeft > -100) {
 				const minGap = (lastLabelLen / 2) + (approxWidthPct / 2) + settings.overlapPad;
 				if (node.left - lastLeft < minGap) {
+					// Prefer keeping edge labels over middle labels.
 					if (node.edge) {
 						finalNodes.pop();
 					}
@@ -691,6 +408,7 @@ window.CWidgetTimeState = class extends CWidget {
 			return false;
 		}
 
+		// Auto: avoid visual overload on very dense timelines or very large row sets.
 		if (tickCount > 16 || rowCount > 40) {
 			return false;
 		}
@@ -841,7 +559,7 @@ window.CWidgetTimeState = class extends CWidget {
 		return parts.join(' ');
 	}
 
-	_renderSegmentLabel(block, label, widthPercent, mode, align = 1) {
+	_renderSegmentLabel(block, label, widthPercent, mode) {
 		if (mode === 2) {
 			return;
 		}
@@ -857,18 +575,6 @@ window.CWidgetTimeState = class extends CWidget {
 		const span = document.createElement('span');
 		span.className = 'timestate__segment-label';
 		span.textContent = text;
-
-		// 0 = left, 1 = center, 2 = right
-		if (align === 0) {
-			block.style.justifyContent = 'flex-start';
-		}
-		else if (align === 2) {
-			block.style.justifyContent = 'flex-end';
-		}
-		else {
-			block.style.justifyContent = 'center';
-		}
-
 		block.appendChild(span);
 	}
 };

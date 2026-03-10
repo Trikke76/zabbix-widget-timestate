@@ -113,8 +113,7 @@
 
 .timestate__lane {
 	position: relative;
-	/* Row height is controlled via CSS variable set inline on .timestate__row */
-	height: var(--ts-row-height, 40px);
+	height: 40px;
 	border-radius: 6px;
 	background: #1f2b38;
 	overflow: hidden;
@@ -147,12 +146,12 @@
 	top: 0;
 	height: 100%;
 	min-width: 1px;
+	opacity: 0.95;
 	display: flex;
 	align-items: center;
 	padding: 0 8px;
 	box-sizing: border-box;
 	overflow: hidden;
-	/* opacity and outline are set inline per-segment based on fill_opacity / line_width */
 }
 
 .timestate__segment-label {
@@ -167,87 +166,6 @@
 	text-overflow: ellipsis;
 	pointer-events: none;
 }
-
-/* ── Pagination ─────────────────────────────────────────── */
-
-.timestate__pager {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 6px;
-	margin-top: 10px;
-	padding: 6px 2px;
-	border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.timestate__page-btns {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-	flex-wrap: wrap;
-}
-
-.timestate__page-prev,
-.timestate__page-next {
-	padding: 3px 8px;
-	border: 1px solid #395066;
-	border-radius: 4px;
-	background: rgba(15, 23, 34, 0.45);
-	color: #c9d8e8;
-	font-size: 11px;
-	cursor: pointer;
-	line-height: 1.4;
-}
-
-.timestate__page-prev:disabled,
-.timestate__page-next:disabled {
-	opacity: 0.35;
-	cursor: default;
-}
-
-.timestate__page-prev:not(:disabled):hover,
-.timestate__page-next:not(:disabled):hover {
-	background: rgba(255, 255, 255, 0.08);
-}
-
-.timestate__page-btn {
-	min-width: 26px;
-	padding: 3px 6px;
-	border: 1px solid #395066;
-	border-radius: 4px;
-	background: rgba(15, 23, 34, 0.45);
-	color: #c9d8e8;
-	font-size: 11px;
-	cursor: pointer;
-	line-height: 1.4;
-	text-align: center;
-}
-
-.timestate__page-btn.is-active {
-	background: #1e5080;
-	border-color: #2d7cbf;
-	color: #fff;
-	cursor: default;
-}
-
-.timestate__page-btn:not(.is-active):not(:disabled):hover {
-	background: rgba(255, 255, 255, 0.08);
-}
-
-.timestate__page-sep {
-	font-size: 11px;
-	color: #607d8b;
-	padding: 0 2px;
-	user-select: none;
-}
-
-.timestate__page-info {
-	font-size: 11px;
-	color: #607d8b;
-	margin-left: auto;
-}
-
-/* ── Legend ─────────────────────────────────────────────── */
 
 .timestate__legend {
 	display: flex;
@@ -337,8 +255,6 @@
 	border-radius: 50%;
 }
 
-/* ── Tooltip ────────────────────────────────────────────── */
-
 .timestate__tooltip {
 	position: fixed;
 	z-index: 100000;
@@ -355,8 +271,6 @@
 	border-radius: 8px;
 	box-shadow: 0 10px 28px rgba(0,0,0,.45);
 }
-
-/* ── Selected items ─────────────────────────────────────── */
 
 .timestate__selected {
 	margin-top: 8px;
