@@ -872,14 +872,17 @@
 		style.textContent = [
 			'.overlay-dialogue.timestate-edit-wide,.overlay-dialogue.modal.timestate-edit-wide{width:min(1880px,98vw)!important;max-width:min(1880px,98vw)!important;}',
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
-			'.timestate-datasets{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;}',
+			'.timestate-datasets{margin-top:8px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;overflow:hidden;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
-			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
-			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0 0 8px 0;}',
-			'.timestate-dataset-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px 0;padding-bottom:8px;border-bottom:1px solid #3a3a3a;}',
-			'.timestate-dataset-tab{border:1px solid #4a4a4a;background:#2b2b2b;color:#d8d8d8;border-radius:3px;padding:5px 10px;cursor:pointer;line-height:1.2;}',
-			'.timestate-dataset-tab.is-active{background:#3f5568;border-color:#8aa2b2;color:#ffffff;}',
-			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;}',
+			'.timestate-datasets-header{padding:10px 12px 8px;border-bottom:1px solid #3a3a3a;}',
+			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 6px 0;}',
+			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0;}',
+			'.timestate-dataset-tabs-row{display:flex;align-items:flex-end;gap:8px;padding:0 12px;border-bottom:1px solid #3a3a3a;background:#2a2a2a;}',
+			'.timestate-dataset-tabs{display:flex;flex:1 1 auto;flex-wrap:nowrap;gap:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;}',
+			'.timestate-dataset-tab{border:0;border-bottom:3px solid transparent;background:transparent;color:#b9c0c7;padding:9px 14px;cursor:pointer;line-height:1.2;white-space:nowrap;min-height:36px;}',
+			'.timestate-dataset-tab:hover{color:#e6e6e6;background:rgba(255,255,255,.03);}',
+			'.timestate-dataset-tab.is-active{color:#ffffff;border-bottom-color:#8aa2b2;background:rgba(138,162,178,.16);font-weight:600;}',
+			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;padding:10px;}',
 			'.timestate-dataset-row{display:none;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#232323;}',
 			'.timestate-dataset-row.is-active{display:block;}',
 			'.timestate-dataset-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px 0;padding:0 0 6px 0;border-bottom:1px solid #3a3a3a;}',
@@ -908,7 +911,7 @@
 			'.timestate-dataset-row input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-dataset-row textarea{width:100%;min-height:58px;resize:vertical;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:6px 7px;box-sizing:border-box;font:inherit;}',
 			'.timestate-dataset-row select{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
-			'.timestate-dataset-add{margin-top:8px;border:1px solid #8aa2b2;background:#7f97a8;color:#ffffff;border-radius:3px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:34px;}',
+			'.timestate-dataset-add{margin:0 0 6px auto;border:1px solid #8aa2b2;background:#7f97a8;color:#ffffff;border-radius:3px;padding:5px 12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:30px;white-space:nowrap;flex:0 0 auto;}',
 			'.timestate-dataset-remove{width:28px;height:28px;border:1px solid #4a4a4a;background:#2b2b2b;color:#d8d8d8;border-radius:3px;cursor:pointer;}',
 			'.timestate-map-builder{margin-top:8px;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;}',
 			'.timestate-map-builder-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
@@ -1453,14 +1456,20 @@
 		for (let i = 0; i < rows.length; i++) {
 			const rowEl = rows[i];
 			const active = i === activeIndex;
+			const tabTitle = getDataSetTabTitle(rowEl, i);
 			rowEl.classList.toggle('is-active', active);
 			rowEl.dataset.datasetIndex = String(i);
+			const headName = rowEl.querySelector('.timestate-dataset-name');
+			if (headName) {
+				headName.textContent = tabTitle;
+			}
 
 			const tabBtn = document.createElement('button');
 			tabBtn.type = 'button';
 			tabBtn.className = `timestate-dataset-tab${active ? ' is-active' : ''}`;
-			tabBtn.textContent = getDataSetTabTitle(rowEl, i);
+			tabBtn.textContent = tabTitle;
 			tabBtn.title = tabBtn.textContent;
+			tabBtn.setAttribute('aria-selected', active ? 'true' : 'false');
 			tabBtn.addEventListener('click', () => {
 				renderDataSetTabs(builder, rowsWrap, i);
 			});
@@ -1860,11 +1869,15 @@
 		builder.id = 'timestate-datasets';
 		builder.className = 'timestate-datasets';
 		builder.innerHTML = [
-			'<div class="timestate-datasets-title">Data sets</div>',
-			'<div class="timestate-datasets-help">Each data set has its own filters and processing options. Add as many as you need.</div>',
-			'<div class="timestate-dataset-tabs"></div>',
+			'<div class="timestate-datasets-header">',
+				'<div class="timestate-datasets-title">Data sets</div>',
+				'<div class="timestate-datasets-help">Each data set has its own filters and processing options. Add as many as you need.</div>',
+			'</div>',
+			'<div class="timestate-dataset-tabs-row">',
+				'<div class="timestate-dataset-tabs"></div>',
+				'<button type="button" class="timestate-dataset-add">Add data set</button>',
+			'</div>',
 			'<div class="timestate-dataset-rows"></div>',
-			'<button type="button" class="timestate-dataset-add">Add data set</button>'
 		].join('');
 
 		insertAfter.parentNode.insertBefore(builder, insertAfter.nextSibling);
