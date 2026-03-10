@@ -884,6 +884,8 @@
 			'.timestate-global-field{display:flex;flex-direction:column;gap:4px;min-width:0;}',
 			'.timestate-global-field > span{font-size:12px;color:#d8d8d8;white-space:normal;word-break:break-word;}',
 			'.timestate-global-field select,.timestate-global-field input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
+			'.timestate-global-control{min-width:0;}',
+			'.timestate-global-control > *{max-width:100%;}',
 			'.timestate-datasets-header{padding:10px 12px 8px;border-bottom:1px solid #3a3a3a;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 6px 0;}',
 			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0;}',
@@ -962,6 +964,12 @@
 	function hideFieldRow(fieldName) {
 		const field = findField(fieldName);
 		if (!field) {
+			return;
+		}
+
+		const tr = field.closest('tr');
+		if (tr) {
+			tr.style.display = 'none';
 			return;
 		}
 
@@ -1159,17 +1167,36 @@
 			if (!field) {
 				continue;
 			}
-
-			const row = field.closest(
-				'.form-field, .form-grid, .fields-group, .field-row, tr, li, .table-forms-td-right, .table-forms-field'
-			);
-			const label = extractFieldLabel(field, spec.label);
-			if (row) {
-				const labelCell = row.previousElementSibling;
-				if (labelCell && (labelCell.matches('td') || labelCell.classList.contains('table-forms-td-left'))) {
-					labelCell.style.display = 'none';
+			let label = spec.label;
+			let controlNode = null;
+			const tableRow = field.closest('tr');
+			if (tableRow) {
+				const labelCell = tableRow.querySelector('td.table-forms-td-left, td:first-child');
+				const valueCell = tableRow.querySelector('td.table-forms-td-right, td.table-forms-field, td:last-child');
+				if (labelCell) {
+					const text = String(labelCell.textContent || '').replace(/\s+/g, ' ').trim();
+					if (text !== '') {
+						label = text;
+					}
 				}
-				row.style.display = 'none';
+				if (valueCell) {
+					controlNode = document.createElement('div');
+					controlNode.className = 'timestate-global-control';
+					while (valueCell.firstChild) {
+						controlNode.appendChild(valueCell.firstChild);
+					}
+				}
+				tableRow.style.display = 'none';
+			}
+			else {
+				const row = field.closest('.form-field, .form-grid, .fields-group, .field-row, li, .table-forms-td-right, .table-forms-field');
+				label = extractFieldLabel(field, spec.label);
+				if (row) {
+					row.style.display = 'none';
+				}
+				controlNode = document.createElement('div');
+				controlNode.className = 'timestate-global-control';
+				controlNode.appendChild(field);
 			}
 
 			const wrap = document.createElement('label');
@@ -1177,7 +1204,9 @@
 			const text = document.createElement('span');
 			text.textContent = label;
 			wrap.appendChild(text);
-			wrap.appendChild(field);
+			if (controlNode) {
+				wrap.appendChild(controlNode);
+			}
 			grid.appendChild(wrap);
 		}
 
