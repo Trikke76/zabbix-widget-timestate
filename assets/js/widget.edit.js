@@ -1134,7 +1134,13 @@
 	function ensureGlobalOptionsPanel() {
 		const existing = document.querySelector('.timestate-global-panel');
 		if (existing) {
-			existing.closest('.timestate-global-row, .form-field, .form-grid, .field-row, div')?.remove();
+			const holder = existing.closest('.timestate-global-row');
+			if (holder) {
+				holder.remove();
+			}
+			else {
+				existing.remove();
+			}
 			window.timestate_widget_form._globalOptionsPanelBound = false;
 		}
 		if (window.timestate_widget_form._globalOptionsPanelBound) {
@@ -1177,10 +1183,12 @@
 			const tableRow = field.closest('tr');
 			if (tableRow) {
 				const labelCell = tableRow.querySelector('td.table-forms-td-left, td:first-child');
-				const cells = Array.from(tableRow.querySelectorAll('td, .table-forms-field, .table-forms-td-right'));
-				let valueCell = cells.find((cell) => cell.contains(field)) || null;
+				let valueCell = tableRow.querySelector('td.table-forms-td-right, td.table-forms-field');
 				if (!valueCell) {
-					valueCell = tableRow.querySelector('td.table-forms-td-right, td.table-forms-field');
+					valueCell = Array.from(tableRow.querySelectorAll('td')).find((cell) => cell !== labelCell) || null;
+				}
+				if (!valueCell) {
+					valueCell = tableRow.querySelector('td:last-child');
 				}
 				if (labelCell) {
 					const text = String(labelCell.textContent || '').replace(/\s+/g, ' ').trim();
@@ -1191,8 +1199,7 @@
 				if (valueCell) {
 					controlNode = document.createElement('div');
 					controlNode.className = 'timestate-global-control';
-					const hasFieldInside = valueCell.contains(field);
-					if (hasFieldInside) {
+					if (valueCell.childNodes.length > 0) {
 						while (valueCell.firstChild) {
 							controlNode.appendChild(valueCell.firstChild);
 						}
