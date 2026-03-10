@@ -1181,15 +1181,16 @@
 			{name: 'legend_show_duration', label: 'Legend: show total duration'},
 			{name: 'segment_label_mode', label: 'Segment labels'}
 		];
-		const rows = [];
+		const entries = [];
 		for (const spec of specs) {
-			const row = getFieldRow(spec.name);
-			if (!row || rows.includes(row)) {
+			const field = findField(spec.name);
+			if (!field) {
 				continue;
 			}
-			rows.push(row);
+			const row = getFieldRow(spec.name);
+			entries.push({spec, field, row});
 		}
-		if (rows.length === 0) {
+		if (entries.length === 0) {
 			return;
 		}
 
@@ -1207,14 +1208,31 @@
 			return;
 		}
 		const columns = panel.querySelectorAll('.timestate-global-col tbody');
-		const splitAt = Math.ceil(rows.length / 2);
-		for (let i = 0; i < rows.length; i++) {
+		const splitAt = Math.ceil(entries.length / 2);
+		for (let i = 0; i < entries.length; i++) {
 			const target = i < splitAt ? columns[0] : columns[1];
 			if (!target) {
 				continue;
 			}
-			rows[i].style.display = '';
-			target.appendChild(rows[i]);
+			const entry = entries[i];
+			const tr = document.createElement('tr');
+			const tdLabel = document.createElement('td');
+			tdLabel.className = 'table-forms-td-left';
+			tdLabel.textContent = entry.spec.label;
+			const tdControl = document.createElement('td');
+			tdControl.className = 'table-forms-td-right';
+			tdControl.appendChild(entry.field);
+			tr.appendChild(tdLabel);
+			tr.appendChild(tdControl);
+			target.appendChild(tr);
+
+			if (entry.row) {
+				entry.row.style.display = 'none';
+			}
+			const prev = entry.row?.previousElementSibling;
+			if (prev && (prev.matches('td') || prev.classList.contains('table-forms-td-left'))) {
+				prev.style.display = 'none';
+			}
 		}
 		hideOrphanLabelsByText(specs.map((spec) => spec.label), panel);
 		window.timestate_widget_form._globalOptionsPanelBound = true;
