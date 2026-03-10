@@ -1034,12 +1034,8 @@
 			return;
 		}
 
-		const cells = document.querySelectorAll('td, .table-forms-td-left, .form-grid-label, .form-field-label, .field-label, label');
+		const cells = document.querySelectorAll('td, .table-forms-td-left, .form-grid-label, .form-field-label, .field-label');
 		for (const cell of cells) {
-			if (cell.closest('.timestate-global-panel, #timestate-datasets')) {
-				continue;
-			}
-
 			const text = String(cell.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
 			if (!wanted.has(text)) {
 				continue;
@@ -1193,8 +1189,6 @@
 			rows[i].style.display = '';
 			target.appendChild(rows[i]);
 		}
-		hideLabelCellsByText(specs.map((spec) => spec.label));
-
 		window.timestate_widget_form._globalOptionsPanelBound = true;
 	}
 
