@@ -2187,7 +2187,6 @@
 		}
 
 		ensureValueMappingBuilderStyle();
-		ensureGlobalOptionsPanel();
 		document.querySelectorAll('.timestate-dataset-suggest').forEach((el) => {
 			el.remove();
 		});
