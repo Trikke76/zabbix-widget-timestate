@@ -876,8 +876,12 @@
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
 			'.timestate-datasets-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
 			'.timestate-datasets-help{font-size:12px;color:#b9c0c7;margin:0 0 8px 0;}',
+			'.timestate-dataset-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px 0;padding-bottom:8px;border-bottom:1px solid #3a3a3a;}',
+			'.timestate-dataset-tab{border:1px solid #4a4a4a;background:#2b2b2b;color:#d8d8d8;border-radius:3px;padding:5px 10px;cursor:pointer;line-height:1.2;}',
+			'.timestate-dataset-tab.is-active{background:#3f5568;border-color:#8aa2b2;color:#ffffff;}',
 			'.timestate-dataset-rows{display:flex;flex-direction:column;gap:8px;}',
-			'.timestate-dataset-row{padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#232323;}',
+			'.timestate-dataset-row{display:none;padding:10px;border:1px solid #3a3a3a;border-radius:4px;background:#232323;}',
+			'.timestate-dataset-row.is-active{display:block;}',
 			'.timestate-dataset-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px 0;padding:0 0 6px 0;border-bottom:1px solid #3a3a3a;}',
 			'.timestate-dataset-name{font-size:18px;font-weight:600;color:#e6e6e6;}',
 			'.timestate-dataset-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}',
@@ -1411,7 +1415,60 @@
 		}
 	}
 
-	function buildDataSetRow(rowsWrap, hiddenField, data = null) {
+	function getDataSetTabTitle(rowEl, index) {
+		const explicit = String(rowEl.querySelector('.timestate-dataset-title')?.value || '').trim();
+		return explicit !== '' ? explicit : `Data set ${index + 1}`;
+	}
+
+	function renderDataSetTabs(builder, rowsWrap, requestedIndex = null) {
+		if (!builder || !rowsWrap) {
+			return;
+		}
+
+		const tabsWrap = builder.querySelector('.timestate-dataset-tabs');
+		if (!tabsWrap) {
+			return;
+		}
+
+		const rows = Array.from(rowsWrap.querySelectorAll('.timestate-dataset-row'));
+		if (rows.length === 0) {
+			tabsWrap.innerHTML = '';
+			builder.dataset.activeIndex = '0';
+			return;
+		}
+
+		const fallback = Number.isFinite(Number(builder.dataset.activeIndex))
+			? Number(builder.dataset.activeIndex)
+			: 0;
+		let activeIndex = requestedIndex !== null
+			? Number(requestedIndex)
+			: fallback;
+		if (!Number.isFinite(activeIndex)) {
+			activeIndex = 0;
+		}
+		activeIndex = Math.max(0, Math.min(rows.length - 1, Math.trunc(activeIndex)));
+		builder.dataset.activeIndex = String(activeIndex);
+
+		tabsWrap.innerHTML = '';
+		for (let i = 0; i < rows.length; i++) {
+			const rowEl = rows[i];
+			const active = i === activeIndex;
+			rowEl.classList.toggle('is-active', active);
+			rowEl.dataset.datasetIndex = String(i);
+
+			const tabBtn = document.createElement('button');
+			tabBtn.type = 'button';
+			tabBtn.className = `timestate-dataset-tab${active ? ' is-active' : ''}`;
+			tabBtn.textContent = getDataSetTabTitle(rowEl, i);
+			tabBtn.title = tabBtn.textContent;
+			tabBtn.addEventListener('click', () => {
+				renderDataSetTabs(builder, rowsWrap, i);
+			});
+			tabsWrap.appendChild(tabBtn);
+		}
+	}
+
+	function buildDataSetRow(builder, rowsWrap, hiddenField, data = null, requestedActiveIndex = null) {
 		const set = data || {
 			name: '',
 			filter_type: 'key',
@@ -1725,6 +1782,7 @@
 			if (headNameEl) {
 				headNameEl.textContent = title !== '' ? title : 'Data set';
 			}
+			renderDataSetTabs(builder, rowsWrap);
 			const rows = getDataSetsFromDom(rowsWrap);
 			hiddenField.value = serializeDataSets(rows);
 			hiddenField.dispatchEvent(new Event('input', {bubbles: true}));
@@ -1764,10 +1822,13 @@
 		window.addEventListener('scroll', positionSuggest, true);
 		rowEl.querySelector('.timestate-dataset-maxrows')?.addEventListener('input', schedulePreview);
 		rowEl.querySelector('.timestate-dataset-remove')?.addEventListener('click', () => {
+			const removedIndex = Number(rowEl.dataset.datasetIndex || '0');
 			suggestBox?.remove();
 			rowEl.remove();
+			renderDataSetTabs(builder, rowsWrap, removedIndex);
 			sync();
 		});
+		renderDataSetTabs(builder, rowsWrap, requestedActiveIndex);
 		sync();
 		schedulePreview();
 	}
@@ -1801,6 +1862,7 @@
 		builder.innerHTML = [
 			'<div class="timestate-datasets-title">Data sets</div>',
 			'<div class="timestate-datasets-help">Each data set has its own filters and processing options. Add as many as you need.</div>',
+			'<div class="timestate-dataset-tabs"></div>',
 			'<div class="timestate-dataset-rows"></div>',
 			'<button type="button" class="timestate-dataset-add">Add data set</button>'
 		].join('');
@@ -1827,12 +1889,15 @@
 				state_map: String(findField('state_map')?.value || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			}];
 		}
-		for (const row of rows) {
-			buildDataSetRow(rowsWrap, hiddenField, row);
+		for (let i = 0; i < rows.length; i++) {
+			buildDataSetRow(builder, rowsWrap, hiddenField, rows[i], i === 0 ? 0 : null);
 		}
+		renderDataSetTabs(builder, rowsWrap, 0);
 
 		addBtn?.addEventListener('click', () => {
-			buildDataSetRow(rowsWrap, hiddenField, {
+			const currentRows = Array.from(rowsWrap.querySelectorAll('.timestate-dataset-row'));
+			const newIndex = currentRows.length;
+			buildDataSetRow(builder, rowsWrap, hiddenField, {
 				name: '',
 				filter_type: 'key',
 				filter_value: '',
@@ -1845,7 +1910,7 @@
 				null_gap_mode: '0',
 				null_gap_backfill_first: '0',
 				state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
-			});
+			}, newIndex);
 		});
 
 		// Keep global row sorting, but move it close to Hosts.
