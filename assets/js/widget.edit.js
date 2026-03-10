@@ -873,6 +873,8 @@
 			'.overlay-dialogue.timestate-edit-wide,.overlay-dialogue.modal.timestate-edit-wide{width:min(1880px,98vw)!important;max-width:min(1880px,98vw)!important;}',
 			'.overlay-dialogue.timestate-edit-wide .overlay-dialogue-body,.overlay-dialogue.modal.timestate-edit-wide .overlay-dialogue-body{max-width:none!important;}',
 			'.timestate-datasets{margin-top:8px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;width:100%;box-sizing:border-box;overflow:hidden;}',
+			'.timestate-datasets-row{grid-column:1 / -1;width:100%;}',
+			'.timestate-global-row{grid-column:1 / -1;width:100%;}',
 			'.timestate-datasets-row > td{padding-top:0!important;padding-left:0!important;padding-right:0!important;}',
 			'.timestate-global-row > td{padding-top:0!important;padding-left:0!important;padding-right:0!important;}',
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
@@ -1087,13 +1089,47 @@
 		return fallback;
 	}
 
+	function insertFullWidthAfter(anchorNode, panel, rowClass) {
+		if (!anchorNode || !panel) {
+			return false;
+		}
+
+		const anchorTr = anchorNode.tagName === 'TR' ? anchorNode : anchorNode.closest?.('tr');
+		if (anchorTr && anchorTr.parentNode) {
+			const fullRow = document.createElement('tr');
+			if (rowClass) {
+				fullRow.className = rowClass;
+			}
+			const fullCell = document.createElement('td');
+			fullCell.colSpan = 2;
+			fullCell.appendChild(panel);
+			fullRow.appendChild(fullCell);
+			anchorTr.parentNode.insertBefore(fullRow, anchorTr.nextSibling);
+			return true;
+		}
+
+		const block = anchorNode.closest?.('.form-field, .form-grid, .fields-group, .field-row, li, .table-forms-td-right, .table-forms-field')
+			|| anchorNode;
+		if (!block || !block.parentNode) {
+			return false;
+		}
+
+		const fullWrap = document.createElement('div');
+		if (rowClass) {
+			fullWrap.className = rowClass;
+		}
+		fullWrap.appendChild(panel);
+		block.parentNode.insertBefore(fullWrap, block.nextSibling);
+		return true;
+	}
+
 	function ensureGlobalOptionsPanel() {
 		if (window.timestate_widget_form._globalOptionsPanelBound) {
 			return;
 		}
 
 		const anchorRow = getFieldRow('hostids') || getFieldRow('row_sort');
-		if (!anchorRow || anchorRow.tagName !== 'TR' || !anchorRow.parentNode) {
+		if (!anchorRow || !anchorRow.parentNode) {
 			return;
 		}
 
@@ -1145,13 +1181,7 @@
 			grid.appendChild(wrap);
 		}
 
-		const fullRow = document.createElement('tr');
-		fullRow.className = 'timestate-global-row';
-		const fullCell = document.createElement('td');
-		fullCell.colSpan = 2;
-		fullCell.appendChild(panel);
-		fullRow.appendChild(fullCell);
-		anchorRow.parentNode.insertBefore(fullRow, anchorRow.nextSibling);
+		insertFullWidthAfter(anchorRow, panel, 'timestate-global-row');
 
 		window.timestate_widget_form._globalOptionsPanelBound = true;
 	}
@@ -2144,16 +2174,7 @@
 			'</div>',
 		].join('');
 
-		if (anchorRow && anchorRow.tagName === 'TR' && anchorRow.parentNode) {
-			const fullRow = document.createElement('tr');
-			fullRow.className = 'timestate-datasets-row';
-			const fullCell = document.createElement('td');
-			fullCell.colSpan = 2;
-			fullCell.appendChild(builder);
-			fullRow.appendChild(fullCell);
-			anchorRow.parentNode.insertBefore(fullRow, anchorRow.nextSibling);
-		}
-		else {
+		if (!anchorRow || !insertFullWidthAfter(anchorRow, builder, 'timestate-datasets-row')) {
 			insertAfter.parentNode.insertBefore(builder, insertAfter.nextSibling);
 		}
 		hiddenWrap.style.display = 'none';
