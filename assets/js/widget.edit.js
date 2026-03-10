@@ -1215,13 +1215,38 @@
 				continue;
 			}
 			const entry = entries[i];
+			let controlNode = null;
+			if (entry.row && entry.row.tagName === 'TR') {
+				let valueCell = entry.row.querySelector('td.table-forms-td-right, td.table-forms-field');
+				if (!valueCell) {
+					const cells = Array.from(entry.row.querySelectorAll('td'));
+					valueCell = cells.length > 1 ? cells[cells.length - 1] : null;
+				}
+				if (valueCell) {
+					controlNode = document.createElement('div');
+					while (valueCell.firstChild) {
+						controlNode.appendChild(valueCell.firstChild);
+					}
+				}
+			}
+			else if (entry.row) {
+				controlNode = document.createElement('div');
+				while (entry.row.firstChild) {
+					controlNode.appendChild(entry.row.firstChild);
+				}
+			}
+			if (!controlNode) {
+				controlNode = document.createElement('div');
+				controlNode.appendChild(entry.field);
+			}
+
 			const tr = document.createElement('tr');
 			const tdLabel = document.createElement('td');
 			tdLabel.className = 'table-forms-td-left';
 			tdLabel.textContent = entry.spec.label;
 			const tdControl = document.createElement('td');
 			tdControl.className = 'table-forms-td-right';
-			tdControl.appendChild(entry.field);
+			tdControl.appendChild(controlNode);
 			tr.appendChild(tdLabel);
 			tr.appendChild(tdControl);
 			target.appendChild(tr);
