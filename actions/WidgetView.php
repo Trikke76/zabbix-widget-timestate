@@ -21,7 +21,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$default_lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$default_row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
 		$page_size = $this->clampInt((int) ($this->fields_values['page_size'] ?? 0), 0, 100);
-		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 24, 64);
+		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 16, 120);
 		$line_width = $this->clampInt((int) ($this->fields_values['line_width'] ?? 0), 0, 3);
 		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 95), 40, 100);
 		$row_group_mode = $this->clampInt((int) ($this->fields_values['row_group_mode'] ?? self::DEFAULT_ROW_GROUP_MODE), 0, 2);
@@ -33,6 +33,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$legend_show_count = ((int) ($this->fields_values['legend_show_count'] ?? 1)) === 1 ? 1 : 0;
 		$legend_show_duration = ((int) ($this->fields_values['legend_show_duration'] ?? 1)) === 1 ? 1 : 0;
 		$segment_label_mode = $this->clampInt((int) ($this->fields_values['segment_label_mode'] ?? 0), 0, 2);
+		$segment_value_align = $this->clampInt((int) ($this->fields_values['segment_value_align'] ?? 1), 0, 2);
+		$tooltip_mode = $this->clampInt((int) ($this->fields_values['tooltip_mode'] ?? 0), 0, 2);
+		$tooltip_sort_order = $this->clampInt((int) ($this->fields_values['tooltip_sort_order'] ?? 0), 0, 2);
 		$data_sets = $this->parseDataSets(
 			(string) ($this->fields_values['datasets_json'] ?? ''),
 			[
@@ -71,6 +74,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'legend_show_count' => $legend_show_count,
 				'legend_show_duration' => $legend_show_duration,
 				'segment_label_mode' => $segment_label_mode,
+				'segment_value_align' => $segment_value_align,
+				'tooltip_mode' => $tooltip_mode,
+				'tooltip_sort_order' => $tooltip_sort_order,
 				'selected_items' => [],
 				'error' => _('Select at least one host.'),
 				'user' => ['debug_mode' => $this->getDebugMode()]
@@ -191,6 +197,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'legend_show_count' => $legend_show_count,
 			'legend_show_duration' => $legend_show_duration,
 			'segment_label_mode' => $segment_label_mode,
+			'segment_value_align' => $segment_value_align,
+			'tooltip_mode' => $tooltip_mode,
+			'tooltip_sort_order' => $tooltip_sort_order,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
 		]));

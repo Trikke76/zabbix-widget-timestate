@@ -22,6 +22,9 @@ $payload = [
 	'legend_show_count' => (int) ($data['legend_show_count'] ?? 1),
 	'legend_show_duration' => (int) ($data['legend_show_duration'] ?? 1),
 	'segment_label_mode' => (int) ($data['segment_label_mode'] ?? 0),
+	'segment_value_align' => (int) ($data['segment_value_align'] ?? 1),
+	'tooltip_mode' => (int) ($data['tooltip_mode'] ?? 0),
+	'tooltip_sort_order' => (int) ($data['tooltip_sort_order'] ?? 0),
 	'error' => $data['error'] ?? null
 ];
 

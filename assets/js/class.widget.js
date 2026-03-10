@@ -54,7 +54,7 @@ window.CWidgetTimeState = class extends CWidget {
 		const timeTo = Number(model.time_to || 0);
 		const range = Math.max(1, timeTo - timeFrom);
 		const pageSize = Math.max(0, Number(model.page_size ?? 0));
-		const rowHeight = Math.max(24, Math.min(64, Number(model.row_height ?? 40)));
+		const rowHeight = Math.max(16, Math.min(120, Number(model.row_height ?? 40)));
 		const lineWidth = Math.max(0, Math.min(3, Number(model.line_width ?? 0)));
 		const fillOpacity = Math.max(40, Math.min(100, Number(model.fill_opacity ?? 95))) / 100;
 		root.style.setProperty('--ts-row-height', `${rowHeight}px`);
@@ -81,6 +81,9 @@ window.CWidgetTimeState = class extends CWidget {
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
 		const segmentLabelMode = Math.max(0, Math.min(2, Number(model.segment_label_mode ?? 0)));
+		const segmentValueAlign = Math.max(0, Math.min(2, Number(model.segment_value_align ?? 1)));
+		const tooltipMode = Math.max(0, Math.min(2, Number(model.tooltip_mode ?? 0)));
+		const tooltipSortOrder = Math.max(0, Math.min(2, Number(model.tooltip_sort_order ?? 0)));
 		const rowGroupMode = Math.max(0, Math.min(2, Number(model.row_group_mode ?? 0)));
 		const rowGroupCollapsed = Number(model.row_group_collapsed ?? 0) === 1;
 
@@ -123,12 +126,24 @@ window.CWidgetTimeState = class extends CWidget {
 
 				const block = document.createElement('span');
 				block.className = 'timestate__segment';
+				block.classList.add(this._segmentAlignClass(segmentValueAlign));
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
 				block.style.background = color;
-				const tooltipText = `Value: ${valueText}\nFrom: ${this._fmt(tFrom)}\nTo: ${this._fmt(tTo)}`;
-				this._bindTooltip(block, tooltip, tooltipText);
-				this._renderSegmentLabel(block, rawLabel, width, segmentLabelMode);
+				this._renderSegmentLabel(block, valueText, width, segmentLabelMode);
+				if (tooltipMode !== 2) {
+					this._bindTooltip(block, tooltip, {
+						mode: tooltipMode,
+						sortOrder: tooltipSortOrder,
+						ts: Math.floor((tFrom + tTo) / 2),
+						rowLabel: this._shortRowLabel(fullLabel),
+						valueText,
+						tFrom,
+						tTo,
+						color,
+						rows: pageRows
+					});
+				}
 
 				lane.appendChild(block);
 
@@ -515,9 +530,13 @@ window.CWidgetTimeState = class extends CWidget {
 		return tip;
 	}
 
-	_bindTooltip(block, tooltip, text) {
+	_bindTooltip(block, tooltip, context) {
 		const show = (event) => {
-			tooltip.textContent = text;
+			const html = this._buildTooltipHtml(context);
+			if (html === '') {
+				return;
+			}
+			tooltip.innerHTML = html;
 			tooltip.style.display = 'block';
 			this._positionTooltip(tooltip, event);
 		};
@@ -534,6 +553,77 @@ window.CWidgetTimeState = class extends CWidget {
 		block.addEventListener('mouseenter', show);
 		block.addEventListener('mousemove', move);
 		block.addEventListener('mouseleave', hide);
+	}
+
+	_buildTooltipHtml(context) {
+		const mode = Math.max(0, Math.min(2, Number(context?.mode ?? 0)));
+		if (mode === 2) {
+			return '';
+		}
+
+		if (mode === 1) {
+			const entries = this._collectTooltipEntries(context?.rows, Number(context?.ts || 0), Number(context?.sortOrder || 0));
+			if (entries.length > 0) {
+				const rowsHtml = entries.map((entry) => (
+					`<div class="timestate__tooltip-row">`
+					+ `<i style="background:${entry.color}"></i>`
+					+ `<span class="timestate__tooltip-row-name">${this._escape(entry.rowLabel)}</span>`
+					+ `<span class="timestate__tooltip-row-value">${this._escape(entry.valueText)}</span>`
+					+ `</div>`
+				)).join('');
+
+				return (
+					`<div class="timestate__tooltip-title">${this._escape(this._fmt(Number(context?.ts || 0)))}</div>`
+					+ `<div class="timestate__tooltip-list">${rowsHtml}</div>`
+				);
+			}
+		}
+
+		const valueText = String(context?.valueText || '-');
+		const tFrom = Number(context?.tFrom || 0);
+		const tTo = Number(context?.tTo || 0);
+		return (
+			`<div><strong>Value:</strong> ${this._escape(valueText)}</div>`
+			+ `<div><strong>From:</strong> ${this._escape(this._fmt(tFrom))}</div>`
+			+ `<div><strong>To:</strong> ${this._escape(this._fmt(tTo))}</div>`
+		);
+	}
+
+	_collectTooltipEntries(rows, ts, sortOrder) {
+		if (!Array.isArray(rows) || !Number.isFinite(ts) || ts <= 0) {
+			return [];
+		}
+
+		const out = [];
+		for (const row of rows) {
+			const rowLabel = this._shortRowLabel(String(row?.row_label || row?.key_ || row?.itemid || 'Row'));
+			const segments = Array.isArray(row?.segments) ? row.segments : [];
+			for (const seg of segments) {
+				const tFrom = Number(seg?.t_from || 0);
+				const tTo = Number(seg?.t_to || 0);
+				if (tTo <= tFrom || ts < tFrom || ts > tTo) {
+					continue;
+				}
+
+				const rawLabel = String(seg?.label || seg?.state || 'State');
+				const rawValue = String(seg?.raw_value ?? '').trim();
+				out.push({
+					rowLabel,
+					valueText: rawValue !== '' ? rawValue : rawLabel,
+					color: String(seg?.color || '#607D8B')
+				});
+				break;
+			}
+		}
+
+		if (sortOrder === 1) {
+			out.sort((a, b) => a.valueText.localeCompare(b.valueText, undefined, {numeric: true, sensitivity: 'base'}));
+		}
+		else if (sortOrder === 2) {
+			out.sort((a, b) => b.valueText.localeCompare(a.valueText, undefined, {numeric: true, sensitivity: 'base'}));
+		}
+
+		return out;
 	}
 
 	_positionTooltip(tooltip, event) {
@@ -560,6 +650,16 @@ window.CWidgetTimeState = class extends CWidget {
 			return text;
 		}
 		return text.slice(idx + 2).trim();
+	}
+
+	_segmentAlignClass(mode) {
+		if (mode === 0) {
+			return 'is-align-left';
+		}
+		if (mode === 2) {
+			return 'is-align-right';
+		}
+		return 'is-align-center';
 	}
 
 	_resolveGroupName(row, mode) {

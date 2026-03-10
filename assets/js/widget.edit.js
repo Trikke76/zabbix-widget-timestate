@@ -880,7 +880,7 @@
 			'.timestate-edit-wide .timestate-datasets{grid-column:1 / -1;}',
 			'.timestate-global-panel{margin-top:8px;border:1px solid #3a3a3a;border-radius:4px;background:#2b2b2b;padding:10px;}',
 			'.timestate-global-title{font-size:14px;font-weight:600;color:#e3e3e3;margin:0 0 8px 0;}',
-			'.timestate-global-columns{display:grid;grid-template-columns:repeat(2,minmax(0,max-content));justify-content:start;align-items:start;column-gap:28px;row-gap:0;}',
+			'.timestate-global-columns{display:grid;grid-template-columns:repeat(3,minmax(0,max-content));justify-content:start;align-items:start;column-gap:28px;row-gap:0;}',
 			'.timestate-global-col{min-width:0;}',
 			'.timestate-global-table{width:auto;border-collapse:collapse;table-layout:auto;}',
 			'.timestate-global-table td{padding:4px 0;vertical-align:middle;}',
@@ -955,7 +955,7 @@
 			'.timestate-map-builder--dataset .timestate-map-builder-title{margin-bottom:6px;}',
 			'.timestate-map-builder--dataset .timestate-map-builder-help{margin-bottom:6px;}',
 			'.timestate-edit-wide .port24-pop{position:fixed!important;z-index:2147483000!important;}',
-			'@media (max-width: 1360px){.timestate-global-columns{grid-template-columns:minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
+			'@media (max-width: 1360px){.timestate-global-columns{grid-template-columns:repeat(2,minmax(0,max-content));}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr) 64px 28px;}}',
 			'@media (max-width: 1180px){.timestate-dataset-layout{grid-template-columns:minmax(0,1fr);}.timestate-dataset-sidebar{border-right:0;border-bottom:1px solid #3a3a3a;}.timestate-dataset-selectors{max-height:180px;}}',
 			'@media (max-width: 980px){.timestate-global-columns{grid-template-columns:minmax(0,1fr);}.timestate-dataset-grid{grid-template-columns:minmax(0,1fr);}.timestate-dataset-filter{grid-template-columns:minmax(0,1fr);}.timestate-map-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}.timestate-map-row .timestate-map-type{grid-column:1 / -1;}.timestate-map-row .timestate-map-cond{grid-column:1 / -1;}.timestate-map-row .timestate-map-label{grid-column:1 / -1;}.timestate-map-row .timestate-map-color-wrap{grid-column:1 / 2;}.timestate-map-row .timestate-map-remove{grid-column:2 / 3;justify-self:end;}}'
 		].join('');
@@ -1172,7 +1172,7 @@
 		const specs = [
 			{name: 'row_sort', label: 'Row sorting'},
 			{name: 'page_size', label: 'Page size'},
-			{name: 'row_height', label: 'Row height'},
+			{name: 'row_height', label: 'Row height (px)'},
 			{name: 'line_width', label: 'Line width'},
 			{name: 'fill_opacity', label: 'Fill opacity'},
 			{name: 'row_group_mode', label: 'Row grouping'},
@@ -1183,7 +1183,10 @@
 			{name: 'legend_mode', label: 'Legend mode'},
 			{name: 'legend_show_count', label: 'Legend: show count'},
 			{name: 'legend_show_duration', label: 'Legend: show total duration'},
-			{name: 'segment_label_mode', label: 'Segment labels'}
+			{name: 'segment_label_mode', label: 'Show values in segments'},
+			{name: 'segment_value_align', label: 'Align values in segments'},
+			{name: 'tooltip_mode', label: 'Tooltip mode'},
+			{name: 'tooltip_sort_order', label: 'Tooltip sort order'}
 		];
 		const entries = [];
 		for (const spec of specs) {

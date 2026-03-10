@@ -76,14 +76,8 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
-				(new CWidgetFieldSelect('row_height', _('Row height'), [
-					24 => '24 px',
-					32 => '32 px',
-					40 => '40 px',
-					48 => '48 px',
-					56 => '56 px',
-					64 => '64 px'
-				]))->setDefault(40)
+				(new CWidgetFieldTextBox('row_height', _('Row height (px)')))
+					->setDefault('40')
 			)
 			->addField(
 				(new CWidgetFieldSelect('line_width', _('Line width'), [
@@ -165,10 +159,31 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(1)
 			)
 			->addField(
-				(new CWidgetFieldSelect('segment_label_mode', _('Segment labels'), [
+				(new CWidgetFieldSelect('segment_label_mode', _('Show values in segments'), [
 					0 => _('Auto'),
 					1 => _('Always'),
 					2 => _('Never')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldSelect('segment_value_align', _('Align values in segments'), [
+					0 => _('Left'),
+					1 => _('Center'),
+					2 => _('Right')
+				]))->setDefault(1)
+			)
+			->addField(
+				(new CWidgetFieldSelect('tooltip_mode', _('Tooltip mode'), [
+					0 => _('Single'),
+					1 => _('All'),
+					2 => _('Hidden')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldSelect('tooltip_sort_order', _('Tooltip sort order'), [
+					0 => _('None'),
+					1 => _('Value (A-Z)'),
+					2 => _('Value (Z-A)')
 				]))->setDefault(0)
 			)
 			->addField(

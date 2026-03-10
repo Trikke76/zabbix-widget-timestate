@@ -158,6 +158,18 @@
 	box-shadow: inset 0 0 0 var(--ts-segment-line-width) rgba(255, 255, 255, 0.15);
 }
 
+.timestate__segment.is-align-left {
+	justify-content: flex-start;
+}
+
+.timestate__segment.is-align-center {
+	justify-content: center;
+}
+
+.timestate__segment.is-align-right {
+	justify-content: flex-end;
+}
+
 .timestate__segment-label {
 	display: inline-block;
 	font-size: 11px;
@@ -290,7 +302,7 @@
 	position: fixed;
 	z-index: 100000;
 	display: none;
-	white-space: pre-line;
+	white-space: normal;
 	pointer-events: none;
 	max-width: 360px;
 	padding: 8px 10px;
@@ -301,6 +313,45 @@
 	border: 1px solid #2e3c4d;
 	border-radius: 8px;
 	box-shadow: 0 10px 28px rgba(0,0,0,.45);
+}
+
+.timestate__tooltip-title {
+	font-size: 11px;
+	font-weight: 600;
+	color: #9fb1c5;
+	margin: 0 0 6px 0;
+}
+
+.timestate__tooltip-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.timestate__tooltip-row {
+	display: grid;
+	grid-template-columns: 10px minmax(0, 1fr) auto;
+	align-items: center;
+	column-gap: 6px;
+}
+
+.timestate__tooltip-row i {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+
+.timestate__tooltip-row-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.timestate__tooltip-row-value {
+	color: #d6e0ea;
+	white-space: nowrap;
+	padding-left: 6px;
 }
 
 .timestate__selected {
