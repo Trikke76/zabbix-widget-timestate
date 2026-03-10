@@ -29,6 +29,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$legend_show_count = ((int) ($this->fields_values['legend_show_count'] ?? 1)) === 1 ? 1 : 0;
 		$legend_show_duration = ((int) ($this->fields_values['legend_show_duration'] ?? 1)) === 1 ? 1 : 0;
 		$segment_label_mode = $this->clampInt((int) ($this->fields_values['segment_label_mode'] ?? 0), 0, 2);
+		$segment_align = $this->clampInt((int) ($this->fields_values['segment_align'] ?? 1), 0, 2);
+		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 16, 200);
+		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 95), 0, 100);
+		$line_width = $this->clampInt((int) ($this->fields_values['line_width'] ?? 0), 0, 10);
+		$page_size = $this->clampInt((int) ($this->fields_values['page_size'] ?? 0), 0, 500);
+		$tooltip_mode = $this->clampInt((int) ($this->fields_values['tooltip_mode'] ?? 0), 0, 2);
 		$data_sets = $this->parseDataSets(
 			(string) ($this->fields_values['datasets_json'] ?? ''),
 			[
@@ -63,6 +69,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'legend_show_count' => $legend_show_count,
 				'legend_show_duration' => $legend_show_duration,
 				'segment_label_mode' => $segment_label_mode,
+				'segment_align' => $segment_align,
+				'row_height' => $row_height,
+				'fill_opacity' => $fill_opacity,
+				'line_width' => $line_width,
+				'page_size' => $page_size,
+				'tooltip_mode' => $tooltip_mode,
 				'selected_items' => [],
 				'error' => _('Select at least one host.'),
 				'user' => ['debug_mode' => $this->getDebugMode()]
@@ -179,6 +191,12 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'legend_show_count' => $legend_show_count,
 			'legend_show_duration' => $legend_show_duration,
 			'segment_label_mode' => $segment_label_mode,
+			'segment_align' => $segment_align,
+			'row_height' => $row_height,
+			'fill_opacity' => $fill_opacity,
+			'line_width' => $line_width,
+			'page_size' => $page_size,
+			'tooltip_mode' => $tooltip_mode,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
 		]));

@@ -18,6 +18,12 @@ $payload = [
 	'legend_show_count' => (int) ($data['legend_show_count'] ?? 1),
 	'legend_show_duration' => (int) ($data['legend_show_duration'] ?? 1),
 	'segment_label_mode' => (int) ($data['segment_label_mode'] ?? 0),
+	'segment_align' => (int) ($data['segment_align'] ?? 1),
+	'row_height' => (int) ($data['row_height'] ?? 40),
+	'fill_opacity' => (int) ($data['fill_opacity'] ?? 95),
+	'line_width' => (int) ($data['line_width'] ?? 0),
+	'page_size' => (int) ($data['page_size'] ?? 0),
+	'tooltip_mode' => (int) ($data['tooltip_mode'] ?? 0),
 	'error' => $data['error'] ?? null
 ];
 

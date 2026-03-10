@@ -134,6 +134,50 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
+				(new CWidgetFieldSelect('segment_align', _('Segment label alignment'), [
+					0 => _('Left'),
+					1 => _('Center'),
+					2 => _('Right')
+				]))->setDefault(1)
+			)
+			->addField(
+				(new CWidgetFieldSelect('row_height', _('Row height'), [
+					24 => _('Compact (24px)'),
+					32 => _('Small (32px)'),
+					40 => _('Normal (40px)'),
+					56 => _('Large (56px)'),
+					72 => _('Extra large (72px)')
+				]))->setDefault(40)
+			)
+			->addField(
+				(new CWidgetFieldSelect('fill_opacity', _('Fill opacity'), [
+					25 => _('25%'),
+					50 => _('50%'),
+					75 => _('75%'),
+					90 => _('90%'),
+					100 => _('100%')
+				]))->setDefault(95)
+			)
+			->addField(
+				(new CWidgetFieldSelect('line_width', _('Segment border width'), [
+					0 => _('None'),
+					1 => _('1px'),
+					2 => _('2px'),
+					3 => _('3px')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldTextBox('page_size', _('Page size (0 = disabled)')))
+					->setDefault('0')
+			)
+			->addField(
+				(new CWidgetFieldSelect('tooltip_mode', _('Tooltip mode'), [
+					0 => _('Single'),
+					1 => _('All'),
+					2 => _('Hidden')
+				]))->setDefault(0)
+			)
+			->addField(
 				(new CWidgetFieldTextBox('state_map', _('Value mappings (comma separated)')))
 					->setDefault('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			)
