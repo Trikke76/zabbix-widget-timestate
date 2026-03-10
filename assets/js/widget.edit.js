@@ -1858,6 +1858,13 @@
 		moveFieldRowBefore('legend_show_count', 'item_key_search');
 		moveFieldRowBefore('legend_show_duration', 'item_key_search');
 		moveFieldRowBefore('segment_label_mode', 'item_key_search');
+   // ── NEW global display fields ──
+    moveFieldRowBefore('segment_align', 'item_key_search');
+    moveFieldRowBefore('row_height', 'item_key_search');
+    moveFieldRowBefore('fill_opacity', 'item_key_search');
+    moveFieldRowBefore('line_width', 'item_key_search');
+    moveFieldRowBefore('page_size', 'item_key_search');
+    moveFieldRowBefore('tooltip_mode', 'item_key_search');
 		showFieldRow('row_group_mode');
 		showFieldRow('row_group_collapsed');
 
@@ -1892,6 +1899,7 @@
 			'Backfill from first value',
 			'Value mappings (comma separated)',
 			'Data sets (JSON)'
+      'Data sets'
 		]);
 
 		window.timestate_widget_form._dataSetBuilderBound = true;
