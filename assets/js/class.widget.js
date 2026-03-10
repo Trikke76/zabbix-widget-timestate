@@ -612,8 +612,6 @@ window.CWidgetTimeState = class extends CWidget {
 
 				const rawLabel = String(seg?.label || seg?.state || 'State');
 				const rawValue = String(seg?.raw_value ?? '').trim();
-				const rawLabel = String(seg?.label || seg?.state || 'State');
-				const rawValue = String(seg?.raw_value ?? '').trim();
 				const displayText = rawLabel !== '' ? rawLabel : rawValue;
 				out.push({
 					rowLabel,
