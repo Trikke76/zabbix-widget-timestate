@@ -5,10 +5,25 @@ State timeline widget inspired by Grafana State Timeline.
 ## Features
 
 - Multiple hosts.
-- Global row sorting:
+- Global options:
   - `Name (A-Z)`
   - `Current status (Problem first)`
   - `Last change (most recent first)`
+  - page size (pagination)
+  - row height
+  - line width
+  - fill opacity
+  - row grouping (`None` / `Host` / `Data set`)
+  - groups collapsed by default
+  - time axis tick interval
+  - time axis label density
+  - show grid lines (`Auto` / `On` / `Off`)
+  - legend mode (`List` / `Table` / `Hidden`)
+  - legend count and total duration toggles
+  - show values in segments (`Auto` / `Always` / `Never`)
+  - align values in segments (`Left` / `Center` / `Right`)
+  - tooltip mode (`Single` / `All` / `Hidden`)
+  - tooltip sort order
 - Dataset-based configuration (add multiple datasets in one widget).
 - Per-dataset options:
   - item filter mode (`Item key` or `Item name`) + filter value
@@ -20,6 +35,8 @@ State timeline widget inspired by Grafana State Timeline.
   - null-gap mode (`Disconnected` / `Connected`)
   - optional backfill from first value
   - advanced value mappings builder (type + condition + text + color)
+  - live item suggestion popup while typing filters
+  - matched items preview panel
 - Null-gap behavior:
   - `Disconnected` = show no-data gaps for missing intervals.
   - `Connected` = extend neighboring states through missing intervals.
