@@ -1,5 +1,6 @@
 window.CWidgetTimeState = class extends CWidget {
 	onStart() {
+		this._page = 1;
 		this._render();
 	}
 
@@ -52,11 +53,30 @@ window.CWidgetTimeState = class extends CWidget {
 		const timeFrom = Number(model.time_from || 0);
 		const timeTo = Number(model.time_to || 0);
 		const range = Math.max(1, timeTo - timeFrom);
+		const pageSize = Math.max(0, Number(model.page_size ?? 0));
+		const rowHeight = Math.max(24, Math.min(64, Number(model.row_height ?? 40)));
+		const lineWidth = Math.max(0, Math.min(3, Number(model.line_width ?? 0)));
+		const fillOpacity = Math.max(40, Math.min(100, Number(model.fill_opacity ?? 95))) / 100;
+		root.style.setProperty('--ts-row-height', `${rowHeight}px`);
+		root.style.setProperty('--ts-segment-line-width', `${lineWidth}px`);
+		root.style.setProperty('--ts-segment-opacity', String(fillOpacity));
+
+		const totalRows = rows.length;
+		const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalRows / pageSize)) : 1;
+		if (!Number.isFinite(this._page) || this._page < 1) {
+			this._page = 1;
+		}
+		if (this._page > totalPages) {
+			this._page = totalPages;
+		}
+		const pageStart = pageSize > 0 ? (this._page - 1) * pageSize : 0;
+		const pageRows = pageSize > 0 ? rows.slice(pageStart, pageStart + pageSize) : rows;
+
 		const axisTickStep = Math.max(0, Number(model.axis_tick_step ?? 0));
 		const axisLabelDensity = Math.max(0, Math.min(2, Number(model.axis_label_density ?? 1)));
 		const ticks = this._buildTicks(timeFrom, timeTo, this._targetTickCount(axisLabelDensity), axisTickStep);
 		const axisGridMode = Math.max(0, Math.min(2, Number(model.axis_grid_mode ?? 0)));
-		const showLaneGrid = this._resolveGridVisibility(axisGridMode, ticks.items.length, rows.length);
+		const showLaneGrid = this._resolveGridVisibility(axisGridMode, ticks.items.length, pageRows.length);
 		const legendMode = Math.max(0, Math.min(2, Number(model.legend_mode ?? 0)));
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
@@ -70,7 +90,7 @@ window.CWidgetTimeState = class extends CWidget {
 		const tooltip = this._createTooltip(root);
 
 		const renderedRows = [];
-		for (const row of rows) {
+		for (const row of pageRows) {
 			const rowEl = document.createElement('div');
 			rowEl.className = 'timestate__row';
 
@@ -187,6 +207,9 @@ window.CWidgetTimeState = class extends CWidget {
 		axisRow.appendChild(axis);
 		root.appendChild(axisRow);
 		root.appendChild(table);
+		if (totalPages > 1) {
+			root.appendChild(this._renderPager(this._page, totalPages, totalRows, pageSize));
+		}
 
 		if (legendMode !== 2 && legend.size > 0) {
 			const legendEntries = Array.from(legend.values());
@@ -197,6 +220,46 @@ window.CWidgetTimeState = class extends CWidget {
 				root.appendChild(this._renderLegendList(legendEntries, legendShowCount, legendShowDuration));
 			}
 		}
+	}
+
+	_renderPager(page, totalPages, totalRows, pageSize) {
+		const pager = document.createElement('div');
+		pager.className = 'timestate__pager';
+
+		const prev = document.createElement('button');
+		prev.type = 'button';
+		prev.className = 'timestate__pager-btn';
+		prev.textContent = 'Previous';
+		prev.disabled = page <= 1;
+		prev.addEventListener('click', () => {
+			if (this._page <= 1) {
+				return;
+			}
+			this._page -= 1;
+			this._render();
+		});
+
+		const meta = document.createElement('span');
+		meta.className = 'timestate__pager-meta';
+		meta.textContent = `Page ${page}/${totalPages} • ${totalRows} rows • ${pageSize} per page`;
+
+		const next = document.createElement('button');
+		next.type = 'button';
+		next.className = 'timestate__pager-btn';
+		next.textContent = 'Next';
+		next.disabled = page >= totalPages;
+		next.addEventListener('click', () => {
+			if (this._page >= totalPages) {
+				return;
+			}
+			this._page += 1;
+			this._render();
+		});
+
+		pager.appendChild(prev);
+		pager.appendChild(meta);
+		pager.appendChild(next);
+		return pager;
 	}
 
 	_renderLegendList(entries, showCount, showDuration) {

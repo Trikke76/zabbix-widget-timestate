@@ -20,6 +20,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$hostids = $this->extractHostIds($this->fields_values['hostids'] ?? null);
 		$default_lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$default_row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
+		$page_size = $this->clampInt((int) ($this->fields_values['page_size'] ?? 0), 0, 100);
+		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 24, 64);
+		$line_width = $this->clampInt((int) ($this->fields_values['line_width'] ?? 0), 0, 3);
+		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 95), 40, 100);
 		$row_group_mode = $this->clampInt((int) ($this->fields_values['row_group_mode'] ?? self::DEFAULT_ROW_GROUP_MODE), 0, 2);
 		$row_group_collapsed = ((int) ($this->fields_values['row_group_collapsed'] ?? 0)) === 1 ? 1 : 0;
 		$axis_tick_step = $this->clampInt((int) ($this->fields_values['axis_tick_step'] ?? 0), 0, 86400);
@@ -55,6 +59,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'time_from' => $time_from,
 				'time_to' => $time_to,
 				'legend_mode' => $legend_mode,
+				'page_size' => $page_size,
+				'row_height' => $row_height,
+				'line_width' => $line_width,
+				'fill_opacity' => $fill_opacity,
 				'row_group_mode' => $row_group_mode,
 				'row_group_collapsed' => $row_group_collapsed,
 				'axis_tick_step' => $axis_tick_step,
@@ -172,6 +180,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'time_to' => $time_to,
 			'row_group_mode' => $row_group_mode,
 			'row_group_collapsed' => $row_group_collapsed,
+			'page_size' => $page_size,
+			'row_height' => $row_height,
+			'line_width' => $line_width,
+			'fill_opacity' => $fill_opacity,
 			'axis_tick_step' => $axis_tick_step,
 			'axis_label_density' => $axis_label_density,
 			'axis_grid_mode' => $axis_grid_mode,

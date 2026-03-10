@@ -8,6 +8,10 @@ $form = new CWidgetFormView($data);
 
 $form->addField(new CWidgetFieldMultiSelectHostView($data['fields']['hostids']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['row_sort']));
+$form->addField(new CWidgetFieldSelectView($data['fields']['page_size']));
+$form->addField(new CWidgetFieldSelectView($data['fields']['row_height']));
+$form->addField(new CWidgetFieldSelectView($data['fields']['line_width']));
+$form->addField(new CWidgetFieldSelectView($data['fields']['fill_opacity']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['row_group_mode']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['row_group_collapsed']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['axis_tick_step']));

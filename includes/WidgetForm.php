@@ -66,6 +66,44 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
+				(new CWidgetFieldSelect('page_size', _('Page size'), [
+					0 => _('All'),
+					10 => '10',
+					20 => '20',
+					30 => '30',
+					50 => '50',
+					100 => '100'
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldSelect('row_height', _('Row height'), [
+					24 => '24 px',
+					32 => '32 px',
+					40 => '40 px',
+					48 => '48 px',
+					56 => '56 px',
+					64 => '64 px'
+				]))->setDefault(40)
+			)
+			->addField(
+				(new CWidgetFieldSelect('line_width', _('Line width'), [
+					0 => '0 px',
+					1 => '1 px',
+					2 => '2 px',
+					3 => '3 px'
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldSelect('fill_opacity', _('Fill opacity'), [
+					40 => '40%',
+					60 => '60%',
+					80 => '80%',
+					90 => '90%',
+					95 => '95%',
+					100 => '100%'
+				]))->setDefault(95)
+			)
+			->addField(
 				(new CWidgetFieldSelect('row_group_mode', _('Row grouping'), [
 					0 => _('None'),
 					1 => _('Host'),

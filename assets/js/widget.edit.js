@@ -1171,6 +1171,10 @@
 
 		const specs = [
 			{name: 'row_sort', label: 'Row sorting'},
+			{name: 'page_size', label: 'Page size'},
+			{name: 'row_height', label: 'Row height'},
+			{name: 'line_width', label: 'Line width'},
+			{name: 'fill_opacity', label: 'Fill opacity'},
 			{name: 'row_group_mode', label: 'Row grouping'},
 			{name: 'row_group_collapsed', label: 'Groups collapsed by default'},
 			{name: 'axis_tick_step', label: 'Time axis: tick interval'},
