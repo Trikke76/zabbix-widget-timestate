@@ -1208,6 +1208,7 @@
 			'<div class="timestate-global-columns">',
 				'<div class="timestate-global-col"><table class="timestate-global-table"><tbody></tbody></table></div>',
 				'<div class="timestate-global-col"><table class="timestate-global-table"><tbody></tbody></table></div>',
+				'<div class="timestate-global-col"><table class="timestate-global-table"><tbody></tbody></table></div>',
 			'</div>'
 		].join('');
 		const inserted = insertFullWidthAfter(anchorRow, panel, 'timestate-global-row');
@@ -1215,9 +1216,11 @@
 			return;
 		}
 		const columns = panel.querySelectorAll('.timestate-global-col tbody');
-		const splitAt = Math.ceil(entries.length / 2);
+		const colCount = Math.max(1, Math.min(3, columns.length));
+		const perCol = Math.max(1, Math.ceil(entries.length / colCount));
 		for (let i = 0; i < entries.length; i++) {
-			const target = i < splitAt ? columns[0] : columns[1];
+			const colIndex = Math.min(colCount - 1, Math.floor(i / perCol));
+			const target = columns[colIndex];
 			if (!target) {
 				continue;
 			}
