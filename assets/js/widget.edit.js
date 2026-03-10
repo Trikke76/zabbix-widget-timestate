@@ -1054,6 +1054,33 @@
 		}
 	}
 
+	function hideOrphanLabelsByText(labels, excludeRoot = null) {
+		const wanted = new Set(labels.map((value) => String(value || '').replace(/\s+/g, ' ').trim().toLowerCase()));
+		if (wanted.size === 0) {
+			return;
+		}
+
+		const nodes = document.querySelectorAll('label, .form-grid-label, .form-field-label, .field-label, td.table-forms-td-left, td, div, span');
+		for (const node of nodes) {
+			if (!(node instanceof Element)) {
+				continue;
+			}
+			if (excludeRoot && excludeRoot.contains(node)) {
+				continue;
+			}
+			if (node.querySelector('input, select, textarea, button')) {
+				continue;
+			}
+
+			const text = String(node.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+			if (!wanted.has(text)) {
+				continue;
+			}
+
+			node.style.display = 'none';
+		}
+	}
+
 	function ensureWideEditDialog() {
 		const field = findField('state_map') || findField('item_key_search') || findField('item_name_search');
 		if (!field) {
@@ -1189,6 +1216,7 @@
 			rows[i].style.display = '';
 			target.appendChild(rows[i]);
 		}
+		hideOrphanLabelsByText(specs.map((spec) => spec.label), panel);
 		window.timestate_widget_form._globalOptionsPanelBound = true;
 	}
 
