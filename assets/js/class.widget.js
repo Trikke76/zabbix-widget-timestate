@@ -56,10 +56,9 @@ window.CWidgetTimeState = class extends CWidget {
 		const pageSize = Math.max(0, Number(model.page_size ?? 0));
 		const rowHeight = Math.max(16, Math.min(120, Number(model.row_height ?? 40)));
 		const lineWidth = Math.max(0, Math.min(3, Number(model.line_width ?? 0)));
-		const fillOpacity = Math.max(40, Math.min(100, Number(model.fill_opacity ?? 95))) / 100;
+		const fillOpacity = Math.max(0, Math.min(100, Number(model.fill_opacity ?? 100))) / 100;
 		root.style.setProperty('--ts-row-height', `${rowHeight}px`);
 		root.style.setProperty('--ts-segment-line-width', `${lineWidth}px`);
-		root.style.setProperty('--ts-segment-opacity', String(fillOpacity));
 
 		const totalRows = rows.length;
 		const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalRows / pageSize)) : 1;
@@ -130,7 +129,7 @@ window.CWidgetTimeState = class extends CWidget {
 				block.classList.add(this._segmentAlignClass(segmentValueAlign));
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
-				block.style.background = color;
+				block.style.backgroundColor = this._colorWithAlpha(color, fillOpacity);
 				this._renderSegmentLabel(block, displayText, width, segmentLabelMode);
 				if (tooltipMode !== 2) {
 					this._bindTooltip(block, tooltip, {
@@ -666,6 +665,33 @@ window.CWidgetTimeState = class extends CWidget {
 			return 'is-align-right';
 		}
 		return 'is-align-center';
+	}
+
+	_colorWithAlpha(color, alpha) {
+		const a = Math.max(0, Math.min(1, Number(alpha) || 0));
+		const text = String(color || '').trim();
+
+		const hexMatch = text.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+		if (hexMatch) {
+			let hex = hexMatch[1];
+			if (hex.length === 3) {
+				hex = hex.split('').map((ch) => ch + ch).join('');
+			}
+			const r = parseInt(hex.slice(0, 2), 16);
+			const g = parseInt(hex.slice(2, 4), 16);
+			const b = parseInt(hex.slice(4, 6), 16);
+			return `rgba(${r}, ${g}, ${b}, ${a})`;
+		}
+
+		const rgbMatch = text.match(/^rgb\(\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*\)$/i);
+		if (rgbMatch) {
+			const r = Math.max(0, Math.min(255, Number(rgbMatch[1])));
+			const g = Math.max(0, Math.min(255, Number(rgbMatch[2])));
+			const b = Math.max(0, Math.min(255, Number(rgbMatch[3])));
+			return `rgba(${r}, ${g}, ${b}, ${a})`;
+		}
+
+		return text;
 	}
 
 	_resolveGroupName(row, mode) {

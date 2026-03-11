@@ -23,7 +23,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$page_size = $this->clampInt((int) ($this->fields_values['page_size'] ?? 0), 0, 100);
 		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 16, 120);
 		$line_width = $this->clampInt((int) ($this->fields_values['line_width'] ?? 0), 0, 3);
-		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 95), 40, 100);
+		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 100), 0, 100);
 		$row_group_mode = $this->clampInt((int) ($this->fields_values['row_group_mode'] ?? self::DEFAULT_ROW_GROUP_MODE), 0, 2);
 		$row_group_collapsed = ((int) ($this->fields_values['row_group_collapsed'] ?? 0)) === 1 ? 1 : 0;
 		$axis_tick_step = $this->clampInt((int) ($this->fields_values['axis_tick_step'] ?? 0), 0, 86400);
