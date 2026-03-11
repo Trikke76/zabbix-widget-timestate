@@ -1282,6 +1282,14 @@
 					input.style.minWidth = '72px';
 				}
 			}
+			if (entry.spec.name === 'display_no_value') {
+				const input = tdControl.querySelector('input');
+				if (input) {
+					input.size = 4;
+					input.style.width = '72px';
+					input.style.minWidth = '72px';
+				}
+			}
 			tr.appendChild(tdLabel);
 			tr.appendChild(tdControl);
 			target.appendChild(tr);
