@@ -1270,7 +1270,8 @@
 				'legend_width',
 				'tooltip_max_width',
 				'tooltip_max_height',
-				'display_decimals'
+				'display_decimals',
+				'display_unit'
 			]);
 			if (compactInputs.has(entry.spec.name)) {
 				const input = tdControl.querySelector('input');

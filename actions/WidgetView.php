@@ -42,8 +42,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$tooltip_max_width = $this->clampInt((int) ($this->fields_values['tooltip_max_width'] ?? 360), 180, 1200);
 		$tooltip_max_height = $this->clampInt((int) ($this->fields_values['tooltip_max_height'] ?? 360), 120, 900);
 		$display_unit = trim((string) ($this->fields_values['display_unit'] ?? ''));
-		if (mb_strlen($display_unit) > 16) {
-			$display_unit = mb_substr($display_unit, 0, 16);
+		if (mb_strlen($display_unit) > 4) {
+			$display_unit = mb_substr($display_unit, 0, 4);
 		}
 		$display_decimals = $this->clampInt((int) ($this->fields_values['display_decimals'] ?? -1), -1, 10);
 		$display_no_value = trim((string) ($this->fields_values['display_no_value'] ?? 'No value'));
