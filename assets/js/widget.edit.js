@@ -10,6 +10,15 @@
 		return fallback;
 	}
 
+	function normalizeDisplayDecimals(value) {
+		const parsed = Number(String(value ?? '-1').trim());
+		if (!Number.isFinite(parsed)) {
+			return '-1';
+		}
+		const bounded = Math.max(-1, Math.min(10, Math.trunc(parsed)));
+		return String(bounded);
+	}
+
 	function ensureModernBulkPickerStyle() {
 		if (document.getElementById('port24-modern-picker-style')) {
 			return;
@@ -935,6 +944,7 @@
 			'.timestate-dataset-field.is-full{grid-column:1 / -1;}',
 			'.timestate-dataset-row input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-dataset-row .timestate-dataset-displayunit{width:72px;max-width:72px;min-width:72px;}',
+			'.timestate-dataset-row .timestate-dataset-displaydecimals{width:72px;max-width:72px;min-width:72px;}',
 			'.timestate-dataset-row textarea{width:100%;min-height:58px;resize:vertical;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:6px 7px;box-sizing:border-box;font:inherit;}',
 			'.timestate-dataset-row select{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-dataset-add{margin:0;border:1px solid #8aa2b2;background:#7f97a8;color:#ffffff;border-radius:3px;padding:5px 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:30px;white-space:nowrap;width:100%;gap:7px;}',
@@ -1193,7 +1203,6 @@
 			{name: 'tooltip_sort_order', label: 'Tooltip sort order'},
 			{name: 'tooltip_max_width', label: 'Tooltip max width (px)'},
 			{name: 'tooltip_max_height', label: 'Tooltip max height (px)'},
-			{name: 'display_decimals', label: 'Display decimals (-1 auto)'},
 			{name: 'display_no_value', label: 'Display no value text'}
 		];
 		const entries = [];
@@ -1238,7 +1247,7 @@
 				key: 'formatting',
 				label: 'Formatting',
 				open: false,
-				fields: ['display_decimals', 'display_no_value']
+				fields: ['display_no_value']
 			}
 		];
 
@@ -1261,8 +1270,7 @@
 			'row_height',
 			'legend_width',
 			'tooltip_max_width',
-			'tooltip_max_height',
-			'display_decimals'
+			'tooltip_max_height'
 		]);
 
 		for (const section of sectionSpecs) {
@@ -1455,6 +1463,7 @@
 					null_gap_mode: String(entry.null_gap_mode ?? '0'),
 					null_gap_backfill_first: String(entry.null_gap_backfill_first ?? '0'),
 					display_unit: String(entry.display_unit || ''),
+					display_decimals: normalizeDisplayDecimals(entry.display_decimals ?? '-1'),
 					state_map: String(entry.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 				}));
 		}
@@ -1478,6 +1487,7 @@
 			const null_gap_mode = String(set.null_gap_mode ?? '0').trim();
 			const null_gap_backfill_first = String(set.null_gap_backfill_first ?? '0').trim();
 			const display_unit = String(set.display_unit || '').trim().slice(0, 4);
+			const display_decimals = normalizeDisplayDecimals(set.display_decimals ?? '-1');
 			const state_map = String(set.state_map || '').trim();
 			if (state_map === '') {
 				continue;
@@ -1495,6 +1505,7 @@
 				null_gap_mode,
 				null_gap_backfill_first,
 				display_unit,
+				display_decimals,
 				state_map
 			});
 		}
@@ -1704,6 +1715,7 @@
 				null_gap_mode: String(rowEl.querySelector('.timestate-dataset-nullgap')?.value || '0'),
 				null_gap_backfill_first: String(rowEl.querySelector('.timestate-dataset-backfill')?.value || '0'),
 				display_unit: String(rowEl.querySelector('.timestate-dataset-displayunit')?.value || '').slice(0, 4),
+				display_decimals: normalizeDisplayDecimals(rowEl.querySelector('.timestate-dataset-displaydecimals')?.value || '-1'),
 				state_map: String(rowEl.querySelector('.timestate-dataset-map')?.value || '')
 			});
 		}
@@ -1898,6 +1910,7 @@
 			null_gap_mode: '0',
 			null_gap_backfill_first: '0',
 			display_unit: '',
+			display_decimals: '-1',
 			state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 		};
 		const rowEl = document.createElement('div');
@@ -1931,6 +1944,7 @@
 						'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
 						'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
 						'<label class="timestate-dataset-field"><span>Display unit</span><input type="text" class="timestate-dataset-displayunit" maxlength="4"></label>',
+						'<label class="timestate-dataset-field"><span>Display decimals (-1 auto)</span><input type="text" class="timestate-dataset-displaydecimals" maxlength="3"></label>',
 					'</div>',
 				'</div>',
 				'<div class="timestate-dataset-section" data-section="mappings">',
@@ -1956,6 +1970,7 @@
 		rowEl.querySelector('.timestate-dataset-nullgap').value = String(set.null_gap_mode ?? '0');
 		rowEl.querySelector('.timestate-dataset-backfill').value = String(set.null_gap_backfill_first ?? '0');
 		rowEl.querySelector('.timestate-dataset-displayunit').value = String(set.display_unit || '').slice(0, 4);
+		rowEl.querySelector('.timestate-dataset-displaydecimals').value = normalizeDisplayDecimals(set.display_decimals ?? '-1');
 		const stateMapField = rowEl.querySelector('.timestate-dataset-map');
 		stateMapField.value = String(set.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828');
 		initDataSetSectionTabs(rowEl);
@@ -2277,6 +2292,7 @@
 				null_gap_mode: String(findField('null_gap_mode')?.value || '0'),
 				null_gap_backfill_first: String(findField('null_gap_backfill_first')?.value || '0'),
 				display_unit: '',
+				display_decimals: '-1',
 				state_map: String(findField('state_map')?.value || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			}];
 		}
@@ -2301,6 +2317,7 @@
 				null_gap_mode: '0',
 				null_gap_backfill_first: '0',
 				display_unit: '',
+				display_decimals: '-1',
 				state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 			}, newIndex);
 		});

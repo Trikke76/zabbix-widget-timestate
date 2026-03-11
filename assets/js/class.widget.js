@@ -54,7 +54,7 @@ window.CWidgetTimeState = class extends CWidget {
 		const timeTo = Number(model.time_to || 0);
 		const range = Math.max(1, timeTo - timeFrom);
 		const pageSize = Math.max(0, Number(model.page_size ?? 0));
-		const rowHeight = Math.max(16, Math.min(120, Number(model.row_height ?? 40)));
+		const rowHeight = Math.max(16, Math.min(400, Number(model.row_height ?? 40)));
 		const lineWidth = Math.max(0, Math.min(3, Number(model.line_width ?? 0)));
 		const fillOpacity = Math.max(0, Math.min(100, Number(model.fill_opacity ?? 100))) / 100;
 		const panelTransparent = Number(model.panel_transparent ?? 0) === 1;
@@ -97,7 +97,6 @@ window.CWidgetTimeState = class extends CWidget {
 		const tooltipMaxWidth = Math.max(180, Math.min(1200, Number(model.tooltip_max_width ?? 360)));
 		const tooltipMaxHeight = Math.max(120, Math.min(900, Number(model.tooltip_max_height ?? 360)));
 		const displayFormat = {
-			decimals: Math.max(-1, Math.min(10, Number(model.display_decimals ?? -1))),
 			noValue: String(model.display_no_value ?? 'No value').trim() || 'No value'
 		};
 		const rowGroupMode = Math.max(0, Math.min(2, Number(model.row_group_mode ?? 0)));
@@ -123,7 +122,8 @@ window.CWidgetTimeState = class extends CWidget {
 			labelEl.title = fullLabel;
 			const rowFormat = {
 				...displayFormat,
-				unit: this._normalizeUnit(String(row.display_unit ?? ''))
+				unit: this._normalizeUnit(String(row.display_unit ?? '')),
+				decimals: this._normalizeDecimals(row.display_decimals)
 			};
 
 			const lane = document.createElement('div');
@@ -663,7 +663,8 @@ window.CWidgetTimeState = class extends CWidget {
 				const rawValue = String(seg?.raw_value ?? '').trim();
 				const rowFormat = {
 					...(format || {}),
-					unit: this._normalizeUnit(String(row?.display_unit ?? ''))
+					unit: this._normalizeUnit(String(row?.display_unit ?? '')),
+					decimals: this._normalizeDecimals(row?.display_decimals)
 				};
 				const displayText = this._buildDisplayText(rawLabel, rawValue, rowFormat);
 				out.push({
@@ -830,6 +831,14 @@ window.CWidgetTimeState = class extends CWidget {
 
 	_normalizeUnit(unit) {
 		return String(unit || '').trim().slice(0, 4);
+	}
+
+	_normalizeDecimals(value) {
+		const parsed = Number(value);
+		if (!Number.isFinite(parsed)) {
+			return -1;
+		}
+		return Math.max(-1, Math.min(10, Math.trunc(parsed)));
 	}
 
 	_buildDisplayText(rawLabel, rawValue, format) {

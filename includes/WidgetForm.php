@@ -216,10 +216,6 @@ class WidgetForm extends CWidgetForm {
 					->setDefault('360')
 			)
 			->addField(
-				(new CWidgetFieldTextBox('display_decimals', _('Display decimals (-1 auto)')))
-					->setDefault('-1')
-			)
-			->addField(
 				(new CWidgetFieldTextBox('display_no_value', _('Display no value text')))
 					->setDefault('No value')
 			)

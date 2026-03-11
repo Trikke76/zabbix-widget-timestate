@@ -21,7 +21,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$default_lookback_hours = $this->clampInt((int) ($this->fields_values['lookback_hours'] ?? self::DEFAULT_LOOKBACK_HOURS), 1, 24 * 31);
 		$default_row_sort = $this->clampInt((int) ($this->fields_values['row_sort'] ?? self::DEFAULT_ROW_SORT), 0, 2);
 		$page_size = $this->clampInt((int) ($this->fields_values['page_size'] ?? 0), 0, 100);
-		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 16, 120);
+		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 16, 400);
 		$line_width = $this->clampInt((int) ($this->fields_values['line_width'] ?? 0), 0, 3);
 		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 100), 0, 100);
 		$panel_transparent = ((int) ($this->fields_values['panel_transparent'] ?? 0)) === 1 ? 1 : 0;
@@ -45,7 +45,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		if (mb_strlen($legacy_display_unit) > 4) {
 			$legacy_display_unit = mb_substr($legacy_display_unit, 0, 4);
 		}
-		$display_decimals = $this->clampInt((int) ($this->fields_values['display_decimals'] ?? -1), -1, 10);
+		$legacy_display_decimals = $this->normalizeDisplayDecimals((int) ($this->fields_values['display_decimals'] ?? -1));
 		$display_no_value = trim((string) ($this->fields_values['display_no_value'] ?? 'No value'));
 		if ($display_no_value === '') {
 			$display_no_value = 'No value';
@@ -66,6 +66,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'null_gap_mode' => (int) ($this->fields_values['null_gap_mode'] ?? 0),
 				'null_gap_backfill_first' => (int) ($this->fields_values['null_gap_backfill_first'] ?? 0),
 				'display_unit' => $legacy_display_unit,
+				'display_decimals' => $legacy_display_decimals,
 				'state_map' => (string) ($this->fields_values['state_map'] ?? 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			]
 		);
@@ -100,7 +101,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'tooltip_sort_order' => $tooltip_sort_order,
 				'tooltip_max_width' => $tooltip_max_width,
 				'tooltip_max_height' => $tooltip_max_height,
-				'display_decimals' => $display_decimals,
 				'display_no_value' => $display_no_value,
 				'selected_items' => [],
 				'error' => _('Select at least one host.'),
@@ -184,6 +184,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 					'host_name' => (string) $item['host_name'],
 					'dataset_name' => $data_set_name,
 					'display_unit' => (string) ($data_set['display_unit'] ?? ''),
+					'display_decimals' => (int) ($data_set['display_decimals'] ?? -1),
 					'itemid' => $itemid,
 					'key_' => (string) $item['key_'],
 					'segments' => $segments,
@@ -231,7 +232,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'tooltip_sort_order' => $tooltip_sort_order,
 			'tooltip_max_width' => $tooltip_max_width,
 			'tooltip_max_height' => $tooltip_max_height,
-			'display_decimals' => $display_decimals,
 			'display_no_value' => $display_no_value,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
@@ -728,6 +728,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'null_gap_mode' => ((int) ($entry['null_gap_mode'] ?? 0)) === 1 ? 1 : 0,
 			'null_gap_backfill_first' => ((int) ($entry['null_gap_backfill_first'] ?? 0)) === 1 ? 1 : 0,
 			'display_unit' => $this->normalizeDisplayUnit((string) ($entry['display_unit'] ?? '')),
+			'display_decimals' => $this->normalizeDisplayDecimals((int) ($entry['display_decimals'] ?? -1)),
 			'rules' => $rules !== [] ? $rules : $this->parseValueMappings('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 		];
 	}
@@ -738,6 +739,10 @@ class WidgetView extends CControllerDashboardWidgetView {
 			$value = mb_substr($value, 0, 4);
 		}
 		return $value;
+	}
+
+	private function normalizeDisplayDecimals(int $value): int {
+		return $this->clampInt($value, -1, 10);
 	}
 
 	private function normalizeFilterType(string $type, string $legacy_key, string $legacy_name): string {
