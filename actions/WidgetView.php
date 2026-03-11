@@ -41,9 +41,9 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$tooltip_sort_order = $this->clampInt((int) ($this->fields_values['tooltip_sort_order'] ?? 0), 0, 2);
 		$tooltip_max_width = $this->clampInt((int) ($this->fields_values['tooltip_max_width'] ?? 360), 180, 1200);
 		$tooltip_max_height = $this->clampInt((int) ($this->fields_values['tooltip_max_height'] ?? 360), 120, 900);
-		$display_unit = trim((string) ($this->fields_values['display_unit'] ?? ''));
-		if (mb_strlen($display_unit) > 4) {
-			$display_unit = mb_substr($display_unit, 0, 4);
+		$legacy_display_unit = trim((string) ($this->fields_values['display_unit'] ?? ''));
+		if (mb_strlen($legacy_display_unit) > 4) {
+			$legacy_display_unit = mb_substr($legacy_display_unit, 0, 4);
 		}
 		$display_decimals = $this->clampInt((int) ($this->fields_values['display_decimals'] ?? -1), -1, 10);
 		$display_no_value = trim((string) ($this->fields_values['display_no_value'] ?? 'No value'));
@@ -65,6 +65,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'merge_shorter_than' => (int) ($this->fields_values['merge_shorter_than'] ?? 0),
 				'null_gap_mode' => (int) ($this->fields_values['null_gap_mode'] ?? 0),
 				'null_gap_backfill_first' => (int) ($this->fields_values['null_gap_backfill_first'] ?? 0),
+				'display_unit' => $legacy_display_unit,
 				'state_map' => (string) ($this->fields_values['state_map'] ?? 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			]
 		);
@@ -99,7 +100,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'tooltip_sort_order' => $tooltip_sort_order,
 				'tooltip_max_width' => $tooltip_max_width,
 				'tooltip_max_height' => $tooltip_max_height,
-				'display_unit' => $display_unit,
 				'display_decimals' => $display_decimals,
 				'display_no_value' => $display_no_value,
 				'selected_items' => [],
@@ -183,6 +183,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 					'row_label' => sprintf('%s :: %s', (string) $item['host_name'], (string) $item['name']),
 					'host_name' => (string) $item['host_name'],
 					'dataset_name' => $data_set_name,
+					'display_unit' => (string) ($data_set['display_unit'] ?? ''),
 					'itemid' => $itemid,
 					'key_' => (string) $item['key_'],
 					'segments' => $segments,
@@ -230,7 +231,6 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'tooltip_sort_order' => $tooltip_sort_order,
 			'tooltip_max_width' => $tooltip_max_width,
 			'tooltip_max_height' => $tooltip_max_height,
-			'display_unit' => $display_unit,
 			'display_decimals' => $display_decimals,
 			'display_no_value' => $display_no_value,
 			'error' => null,
@@ -727,8 +727,17 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'merge_shorter_than' => $merge_shorter_than,
 			'null_gap_mode' => ((int) ($entry['null_gap_mode'] ?? 0)) === 1 ? 1 : 0,
 			'null_gap_backfill_first' => ((int) ($entry['null_gap_backfill_first'] ?? 0)) === 1 ? 1 : 0,
+			'display_unit' => $this->normalizeDisplayUnit((string) ($entry['display_unit'] ?? '')),
 			'rules' => $rules !== [] ? $rules : $this->parseValueMappings('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 		];
+	}
+
+	private function normalizeDisplayUnit(string $value): string {
+		$value = trim($value);
+		if (mb_strlen($value) > 4) {
+			$value = mb_substr($value, 0, 4);
+		}
+		return $value;
 	}
 
 	private function normalizeFilterType(string $type, string $legacy_key, string $legacy_name): string {

@@ -97,7 +97,6 @@ window.CWidgetTimeState = class extends CWidget {
 		const tooltipMaxWidth = Math.max(180, Math.min(1200, Number(model.tooltip_max_width ?? 360)));
 		const tooltipMaxHeight = Math.max(120, Math.min(900, Number(model.tooltip_max_height ?? 360)));
 		const displayFormat = {
-			unit: String(model.display_unit ?? '').trim(),
 			decimals: Math.max(-1, Math.min(10, Number(model.display_decimals ?? -1))),
 			noValue: String(model.display_no_value ?? 'No value').trim() || 'No value'
 		};
@@ -122,6 +121,10 @@ window.CWidgetTimeState = class extends CWidget {
 			const fullLabel = String(row.row_label || row.key_ || row.itemid || 'Row');
 			labelEl.textContent = this._shortRowLabel(fullLabel);
 			labelEl.title = fullLabel;
+			const rowFormat = {
+				...displayFormat,
+				unit: this._normalizeUnit(String(row.display_unit ?? ''))
+			};
 
 			const lane = document.createElement('div');
 			lane.className = 'timestate__lane';
@@ -140,8 +143,8 @@ window.CWidgetTimeState = class extends CWidget {
 				const color = String(seg.color || '#607D8B');
 				const rawLabel = String(seg.label || seg.state || 'State');
 				const rawValue = String(seg.raw_value ?? '').trim();
-				const valueText = this._formatRawValue(rawValue, displayFormat);
-				const displayText = this._buildDisplayText(rawLabel, rawValue, displayFormat);
+				const valueText = this._formatRawValue(rawValue, rowFormat);
+				const displayText = this._buildDisplayText(rawLabel, rawValue, rowFormat);
 				const legendLabel = this._isNumericLabel(rawLabel) ? 'Value' : rawLabel;
 				const duration = Math.max(0, tTo - tFrom);
 
@@ -164,7 +167,7 @@ window.CWidgetTimeState = class extends CWidget {
 						tTo,
 						color,
 						rows: pageRows,
-						format: displayFormat
+						format: rowFormat
 					});
 				}
 
@@ -658,7 +661,11 @@ window.CWidgetTimeState = class extends CWidget {
 
 				const rawLabel = String(seg?.label || seg?.state || 'State');
 				const rawValue = String(seg?.raw_value ?? '').trim();
-				const displayText = this._buildDisplayText(rawLabel, rawValue, format);
+				const rowFormat = {
+					...(format || {}),
+					unit: this._normalizeUnit(String(row?.display_unit ?? ''))
+				};
+				const displayText = this._buildDisplayText(rawLabel, rawValue, rowFormat);
 				out.push({
 					rowLabel,
 					valueText: displayText,
@@ -819,6 +826,10 @@ window.CWidgetTimeState = class extends CWidget {
 		}
 
 		return `${out} ${unit}`;
+	}
+
+	_normalizeUnit(unit) {
+		return String(unit || '').trim().slice(0, 4);
 	}
 
 	_buildDisplayText(rawLabel, rawValue, format) {

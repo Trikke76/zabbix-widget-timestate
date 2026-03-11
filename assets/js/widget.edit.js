@@ -933,13 +933,8 @@
 			'.timestate-dataset-field{display:flex;flex-direction:column;gap:4px;min-width:0;}',
 			'.timestate-dataset-field > span{font-size:12px;color:#d8d8d8;white-space:normal;word-break:break-word;}',
 			'.timestate-dataset-field.is-full{grid-column:1 / -1;}',
-			'.timestate-dataset-preview{padding:8px;border:1px solid #3a3a3a;border-radius:4px;background:#242424;}',
-			'.timestate-dataset-preview-title{font-size:12px;font-weight:600;color:#e3e3e3;margin:0 0 4px 0;}',
-			'.timestate-dataset-preview-meta{font-size:11px;color:#b9c0c7;margin:0 0 6px 0;}',
-			'.timestate-dataset-preview-list{display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow:auto;}',
-			'.timestate-dataset-preview-chip{display:inline-block;padding:2px 8px;border-radius:999px;background:#1f1f1f;border:1px solid #4a4a4a;color:#e5e5e5;font-size:11px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}',
-			'.timestate-dataset-preview-empty{font-size:11px;color:#b9c0c7;}',
 			'.timestate-dataset-row input{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
+			'.timestate-dataset-row .timestate-dataset-displayunit{width:72px;max-width:72px;min-width:72px;}',
 			'.timestate-dataset-row textarea{width:100%;min-height:58px;resize:vertical;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:6px 7px;box-sizing:border-box;font:inherit;}',
 			'.timestate-dataset-row select{width:100%;background:#1f1f1f;color:#e5e5e5;border:1px solid #4a4a4a;border-radius:3px;padding:5px 7px;box-sizing:border-box;}',
 			'.timestate-dataset-add{margin:0;border:1px solid #8aa2b2;background:#7f97a8;color:#ffffff;border-radius:3px;padding:5px 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;min-height:30px;white-space:nowrap;width:100%;gap:7px;}',
@@ -1198,7 +1193,6 @@
 			{name: 'tooltip_sort_order', label: 'Tooltip sort order'},
 			{name: 'tooltip_max_width', label: 'Tooltip max width (px)'},
 			{name: 'tooltip_max_height', label: 'Tooltip max height (px)'},
-			{name: 'display_unit', label: 'Display unit'},
 			{name: 'display_decimals', label: 'Display decimals (-1 auto)'},
 			{name: 'display_no_value', label: 'Display no value text'}
 		];
@@ -1244,7 +1238,7 @@
 				key: 'formatting',
 				label: 'Formatting',
 				open: false,
-				fields: ['display_unit', 'display_decimals', 'display_no_value']
+				fields: ['display_decimals', 'display_no_value']
 			}
 		];
 
@@ -1268,8 +1262,7 @@
 			'legend_width',
 			'tooltip_max_width',
 			'tooltip_max_height',
-			'display_decimals',
-			'display_unit'
+			'display_decimals'
 		]);
 
 		for (const section of sectionSpecs) {
@@ -1461,6 +1454,7 @@
 					merge_shorter_than: String(entry.merge_shorter_than || '0'),
 					null_gap_mode: String(entry.null_gap_mode ?? '0'),
 					null_gap_backfill_first: String(entry.null_gap_backfill_first ?? '0'),
+					display_unit: String(entry.display_unit || ''),
 					state_map: String(entry.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 				}));
 		}
@@ -1483,6 +1477,7 @@
 			const merge_shorter_than = String(set.merge_shorter_than || '').trim();
 			const null_gap_mode = String(set.null_gap_mode ?? '0').trim();
 			const null_gap_backfill_first = String(set.null_gap_backfill_first ?? '0').trim();
+			const display_unit = String(set.display_unit || '').trim().slice(0, 4);
 			const state_map = String(set.state_map || '').trim();
 			if (state_map === '') {
 				continue;
@@ -1499,6 +1494,7 @@
 				merge_shorter_than,
 				null_gap_mode,
 				null_gap_backfill_first,
+				display_unit,
 				state_map
 			});
 		}
@@ -1707,44 +1703,11 @@
 				merge_shorter_than: String(rowEl.querySelector('.timestate-dataset-mergeshort')?.value || '0'),
 				null_gap_mode: String(rowEl.querySelector('.timestate-dataset-nullgap')?.value || '0'),
 				null_gap_backfill_first: String(rowEl.querySelector('.timestate-dataset-backfill')?.value || '0'),
+				display_unit: String(rowEl.querySelector('.timestate-dataset-displayunit')?.value || '').slice(0, 4),
 				state_map: String(rowEl.querySelector('.timestate-dataset-map')?.value || '')
 			});
 		}
 		return rows;
-	}
-
-	function renderDataSetPreview(box, items, meta) {
-		if (!box) {
-			return;
-		}
-		const rowEl = box.closest('.timestate-dataset-row');
-
-		const metaEl = box.querySelector('.timestate-dataset-preview-meta');
-		const listEl = box.querySelector('.timestate-dataset-preview-list');
-		if (!metaEl || !listEl) {
-			return;
-		}
-
-		metaEl.textContent = meta;
-		listEl.innerHTML = '';
-
-		if (!Array.isArray(items) || items.length === 0) {
-			const empty = document.createElement('div');
-			empty.className = 'timestate-dataset-preview-empty';
-			empty.textContent = 'No matching items.';
-			listEl.appendChild(empty);
-			scheduleDataSetSectionHeightUpdate(rowEl);
-			return;
-		}
-
-		for (const item of items) {
-			const chip = document.createElement('span');
-			chip.className = 'timestate-dataset-preview-chip';
-			chip.textContent = String(item.label || '');
-			chip.title = chip.textContent;
-			listEl.appendChild(chip);
-		}
-		scheduleDataSetSectionHeightUpdate(rowEl);
 	}
 
 	function getDataSetTabTitle(rowEl, index) {
@@ -1934,6 +1897,7 @@
 			merge_shorter_than: '0',
 			null_gap_mode: '0',
 			null_gap_backfill_first: '0',
+			display_unit: '',
 			state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 		};
 		const rowEl = document.createElement('div');
@@ -1946,7 +1910,6 @@
 			'<div class="timestate-dataset-section-tabs">',
 				'<button type="button" class="timestate-dataset-section-tab is-active" data-section="filter">Filter</button>',
 				'<button type="button" class="timestate-dataset-section-tab" data-section="processing">Processing</button>',
-				'<button type="button" class="timestate-dataset-section-tab" data-section="preview">Matched items</button>',
 				'<button type="button" class="timestate-dataset-section-tab" data-section="mappings">Value mappings</button>',
 			'</div>',
 			'<input type="hidden" class="timestate-dataset-filterexact" value="0">',
@@ -1967,10 +1930,8 @@
 						'<label class="timestate-dataset-field"><span>Merge short segments (&lt; seconds, 0 = off)</span><input type="text" class="timestate-dataset-mergeshort"></label>',
 						'<label class="timestate-dataset-field"><span>Null-gap mode</span><select class="timestate-dataset-nullgap"><option value="0">Disconnected</option><option value="1">Connected</option></select></label>',
 						'<label class="timestate-dataset-field"><span>Backfill from first value</span><select class="timestate-dataset-backfill"><option value="0">No</option><option value="1">Yes</option></select></label>',
+						'<label class="timestate-dataset-field"><span>Display unit</span><input type="text" class="timestate-dataset-displayunit" maxlength="4"></label>',
 					'</div>',
-				'</div>',
-				'<div class="timestate-dataset-section" data-section="preview">',
-					'<div class="timestate-dataset-preview"><div class="timestate-dataset-preview-title">Matched items</div><div class="timestate-dataset-preview-meta">Type to preview matching items (wildcards like * are supported).</div><div class="timestate-dataset-preview-list"></div></div>',
 				'</div>',
 				'<div class="timestate-dataset-section" data-section="mappings">',
 					'<div class="timestate-map-builder timestate-map-builder--dataset">',
@@ -1994,6 +1955,7 @@
 		rowEl.querySelector('.timestate-dataset-mergeshort').value = String(set.merge_shorter_than || '0');
 		rowEl.querySelector('.timestate-dataset-nullgap').value = String(set.null_gap_mode ?? '0');
 		rowEl.querySelector('.timestate-dataset-backfill').value = String(set.null_gap_backfill_first ?? '0');
+		rowEl.querySelector('.timestate-dataset-displayunit').value = String(set.display_unit || '').slice(0, 4);
 		const stateMapField = rowEl.querySelector('.timestate-dataset-map');
 		stateMapField.value = String(set.state_map || 'value:0=OK|#2E7D32,value:1=Problem|#C62828');
 		initDataSetSectionTabs(rowEl);
@@ -2001,7 +1963,6 @@
 
 		const titleEl = rowEl.querySelector('.timestate-dataset-title');
 		const headNameEl = rowEl.querySelector('.timestate-dataset-name');
-		const previewBox = rowEl.querySelector('.timestate-dataset-preview');
 		const suggestBox = rowEl.querySelector('.timestate-dataset-suggest');
 		const filterInput = rowEl.querySelector('.timestate-dataset-filtervalue');
 		const filterTypeSel = rowEl.querySelector('.timestate-dataset-filtertype');
@@ -2025,8 +1986,6 @@
 			});
 		}
 
-		let previewTimer = null;
-		let previewSeq = 0;
 		let suggestTimer = null;
 		let suggestSeq = 0;
 		rowEl.dataset.suggestArmed = '0';
@@ -2196,59 +2155,6 @@
 			suggestTimer = window.setTimeout(refreshSuggest, 180);
 		};
 
-		const refreshPreview = async () => {
-			const hostids = getHostIds();
-			if (hostids.length === 0) {
-				renderDataSetPreview(previewBox, [], 'Select at least one host to preview items.');
-				return;
-			}
-
-			const filterType = String(rowEl.querySelector('.timestate-dataset-filtertype')?.value || 'key');
-			const filterValue = String(rowEl.querySelector('.timestate-dataset-filtervalue')?.value || '').trim();
-			const filterExact = String(filterExactInput?.value || '0') === '1' ? '1' : '0';
-			const maxRows = Math.max(1, Math.min(200, Number(rowEl.querySelector('.timestate-dataset-maxrows')?.value || 20)));
-
-			if (filterValue.length < 1) {
-				renderDataSetPreview(previewBox, [], 'Type to preview matching items.');
-				return;
-			}
-
-			const seq = ++previewSeq;
-			const params = new URLSearchParams({
-				action: 'widget.timestate.items',
-				output: 'ajax',
-				hostids_csv: hostids.join(','),
-				item_key_search: filterType === 'key' ? filterValue : '',
-				item_name_search: filterType === 'name' ? filterValue : '',
-				filter_exact: filterExact,
-				max_rows: String(maxRows)
-			});
-
-			try {
-				const response = await fetch(`zabbix.php?${params.toString()}`, {
-					method: 'GET',
-					credentials: 'same-origin',
-					headers: {'X-Requested-With': 'XMLHttpRequest'}
-				});
-				const text = await response.text();
-				if (seq !== previewSeq) {
-					return;
-				}
-				const items = parseItemsPayload(text).items || [];
-				renderDataSetPreview(previewBox, items, `Previewing ${items.length} matched item(s).`);
-			}
-			catch (_error) {
-				renderDataSetPreview(previewBox, [], 'Unable to load preview right now.');
-			}
-		};
-
-		const schedulePreview = () => {
-			if (previewTimer !== null) {
-				window.clearTimeout(previewTimer);
-			}
-			previewTimer = window.setTimeout(refreshPreview, 250);
-		};
-
 		const sync = () => {
 			const title = String(titleEl?.value || '').trim();
 			if (headNameEl) {
@@ -2271,7 +2177,6 @@
 			rowEl.dataset.suggestArmed = '0';
 			hideSuggest();
 			scheduleSuggest();
-			schedulePreview();
 		});
 		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('input', (event) => {
 			if (rowEl.dataset.suggestLock !== '1' && filterExactInput) {
@@ -2281,11 +2186,9 @@
 				rowEl.dataset.suggestArmed = '1';
 			}
 			if (rowEl.dataset.suggestLock === '1') {
-				schedulePreview();
 				return;
 			}
 			scheduleSuggest();
-			schedulePreview();
 		});
 		rowEl.querySelector('.timestate-dataset-filtervalue')?.addEventListener('blur', () => {
 			rowEl.dataset.suggestArmed = '0';
@@ -2293,7 +2196,6 @@
 		});
 		window.addEventListener('resize', positionSuggest);
 		window.addEventListener('scroll', positionSuggest, true);
-		rowEl.querySelector('.timestate-dataset-maxrows')?.addEventListener('input', schedulePreview);
 		rowEl.querySelector('.timestate-dataset-remove')?.addEventListener('click', () => {
 			const removedIndex = Number(rowEl.dataset.datasetIndex || '0');
 			suggestBox?.remove();
@@ -2304,7 +2206,6 @@
 		renderDataSetTabs(builder, rowsWrap, requestedActiveIndex);
 		sync();
 		scheduleDataSetSectionHeightUpdate(rowEl);
-		schedulePreview();
 	}
 
 	function ensureDataSetBuilder() {
@@ -2375,6 +2276,7 @@
 				merge_shorter_than: String(findField('merge_shorter_than')?.value || '0'),
 				null_gap_mode: String(findField('null_gap_mode')?.value || '0'),
 				null_gap_backfill_first: String(findField('null_gap_backfill_first')?.value || '0'),
+				display_unit: '',
 				state_map: String(findField('state_map')?.value || 'value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			}];
 		}
@@ -2398,6 +2300,7 @@
 				merge_shorter_than: '0',
 				null_gap_mode: '0',
 				null_gap_backfill_first: '0',
+				display_unit: '',
 				state_map: 'value:0=OK|#2E7D32,value:1=Problem|#C62828'
 			}, newIndex);
 		});

@@ -29,7 +29,6 @@ $form->addField(new CWidgetFieldSelectView($data['fields']['tooltip_mode']));
 $form->addField(new CWidgetFieldSelectView($data['fields']['tooltip_sort_order']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['tooltip_max_width']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['tooltip_max_height']));
-$form->addField(new CWidgetFieldTextBoxView($data['fields']['display_unit']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['display_decimals']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['display_no_value']));
 $form->addField(new CWidgetFieldTextBoxView($data['fields']['datasets_json']));
