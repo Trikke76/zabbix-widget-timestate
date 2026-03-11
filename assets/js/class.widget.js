@@ -129,7 +129,7 @@ window.CWidgetTimeState = class extends CWidget {
 				block.classList.add(this._segmentAlignClass(segmentValueAlign));
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
-				block.style.backgroundColor = this._colorWithAlpha(color, fillOpacity);
+				block.style.backgroundColor = this._mixColorOpaque(color, fillOpacity, '#1f2b38');
 				this._renderSegmentLabel(block, displayText, width, segmentLabelMode);
 				if (tooltipMode !== 2) {
 					this._bindTooltip(block, tooltip, {
@@ -667,31 +667,43 @@ window.CWidgetTimeState = class extends CWidget {
 		return 'is-align-center';
 	}
 
-	_colorWithAlpha(color, alpha) {
-		const a = Math.max(0, Math.min(1, Number(alpha) || 0));
+	_parseColorRgb(color) {
 		const text = String(color || '').trim();
-
 		const hexMatch = text.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
 		if (hexMatch) {
 			let hex = hexMatch[1];
 			if (hex.length === 3) {
 				hex = hex.split('').map((ch) => ch + ch).join('');
 			}
-			const r = parseInt(hex.slice(0, 2), 16);
-			const g = parseInt(hex.slice(2, 4), 16);
-			const b = parseInt(hex.slice(4, 6), 16);
-			return `rgba(${r}, ${g}, ${b}, ${a})`;
+			return {
+				r: parseInt(hex.slice(0, 2), 16),
+				g: parseInt(hex.slice(2, 4), 16),
+				b: parseInt(hex.slice(4, 6), 16)
+			};
 		}
 
 		const rgbMatch = text.match(/^rgb\(\s*([0-9]+)\s*,\s*([0-9]+)\s*,\s*([0-9]+)\s*\)$/i);
 		if (rgbMatch) {
-			const r = Math.max(0, Math.min(255, Number(rgbMatch[1])));
-			const g = Math.max(0, Math.min(255, Number(rgbMatch[2])));
-			const b = Math.max(0, Math.min(255, Number(rgbMatch[3])));
-			return `rgba(${r}, ${g}, ${b}, ${a})`;
+			return {
+				r: Math.max(0, Math.min(255, Number(rgbMatch[1]))),
+				g: Math.max(0, Math.min(255, Number(rgbMatch[2]))),
+				b: Math.max(0, Math.min(255, Number(rgbMatch[3])))
+			};
 		}
 
-		return text;
+		return null;
+	}
+
+	_mixColorOpaque(color, opacity, backgroundColor) {
+		const alpha = Math.max(0, Math.min(1, Number(opacity) || 0));
+		const fg = this._parseColorRgb(color);
+		const bg = this._parseColorRgb(backgroundColor);
+		if (!fg || !bg) {
+			return String(color || '#607D8B');
+		}
+
+		const mix = (f, b) => Math.round((f * alpha) + (b * (1 - alpha)));
+		return `rgb(${mix(fg.r, bg.r)}, ${mix(fg.g, bg.g)}, ${mix(fg.b, bg.b)})`;
 	}
 
 	_resolveGroupName(row, mode) {
