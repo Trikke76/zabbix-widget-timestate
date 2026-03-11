@@ -61,6 +61,13 @@ window.CWidgetTimeState = class extends CWidget {
 		root.style.setProperty('--ts-row-height', `${rowHeight}px`);
 		root.style.setProperty('--ts-segment-line-width', `${lineWidth}px`);
 		root.classList.toggle('is-panel-transparent', panelTransparent);
+		const panelNode = root.closest('.dashboard-grid-widget, .dashboard-widget, .dashboard-widget-container')
+			|| this._body?.closest?.('.dashboard-grid-widget, .dashboard-widget, .dashboard-widget-container')
+			|| this._body?.parentElement
+			|| null;
+		if (panelNode) {
+			panelNode.classList.toggle('timestate-panel-transparent', panelTransparent);
+		}
 
 		const totalRows = rows.length;
 		const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalRows / pageSize)) : 1;
@@ -133,7 +140,7 @@ window.CWidgetTimeState = class extends CWidget {
 				block.classList.add(this._segmentAlignClass(segmentValueAlign));
 				block.style.left = `${Math.max(0, left)}%`;
 				block.style.width = `${Math.max(0.3, width)}%`;
-				block.style.backgroundColor = this._mixColorOpaque(color, fillOpacity, '#1f2b38');
+				block.style.backgroundColor = this._colorWithAlpha(color, fillOpacity);
 				this._renderSegmentLabel(block, displayText, width, segmentLabelMode);
 				if (tooltipMode !== 2) {
 					this._bindTooltip(block, tooltip, {
@@ -717,16 +724,14 @@ window.CWidgetTimeState = class extends CWidget {
 		return null;
 	}
 
-	_mixColorOpaque(color, opacity, backgroundColor) {
+	_colorWithAlpha(color, opacity) {
 		const alpha = Math.max(0, Math.min(1, Number(opacity) || 0));
 		const fg = this._parseColorRgb(color);
-		const bg = this._parseColorRgb(backgroundColor);
-		if (!fg || !bg) {
+		if (!fg) {
 			return String(color || '#607D8B');
 		}
 
-		const mix = (f, b) => Math.round((f * alpha) + (b * (1 - alpha)));
-		return `rgb(${mix(fg.r, bg.r)}, ${mix(fg.g, bg.g)}, ${mix(fg.b, bg.b)})`;
+		return `rgba(${fg.r}, ${fg.g}, ${fg.b}, ${alpha.toFixed(3)})`;
 	}
 
 	_resolveGroupName(row, mode) {

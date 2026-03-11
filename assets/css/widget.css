@@ -145,6 +145,17 @@
 	background: rgba(0, 0, 0, 0.12);
 }
 
+.timestate-panel-transparent {
+	background: transparent !important;
+}
+
+.timestate-panel-transparent .dashboard-grid-widget-body,
+.timestate-panel-transparent .dashboard-widget-body,
+.timestate-panel-transparent .dashboard-grid-widget-contents,
+.timestate-panel-transparent .dashboard-widget-contents {
+	background: transparent !important;
+}
+
 .timestate__axis-row {
 	margin-bottom: 4px;
 }
