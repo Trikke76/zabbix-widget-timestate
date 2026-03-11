@@ -208,6 +208,26 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(0)
 			)
 			->addField(
+				(new CWidgetFieldTextBox('tooltip_max_width', _('Tooltip max width (px)')))
+					->setDefault('360')
+			)
+			->addField(
+				(new CWidgetFieldTextBox('tooltip_max_height', _('Tooltip max height (px)')))
+					->setDefault('360')
+			)
+			->addField(
+				(new CWidgetFieldTextBox('display_unit', _('Display unit')))
+					->setDefault('')
+			)
+			->addField(
+				(new CWidgetFieldTextBox('display_decimals', _('Display decimals (-1 auto)')))
+					->setDefault('-1')
+			)
+			->addField(
+				(new CWidgetFieldTextBox('display_no_value', _('Display no value text')))
+					->setDefault('No value')
+			)
+			->addField(
 				(new CWidgetFieldTextBox('state_map', _('Value mappings (comma separated)')))
 					->setDefault('value:0=OK|#2E7D32,value:1=Problem|#C62828')
 			)

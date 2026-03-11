@@ -1189,7 +1189,12 @@
 			{name: 'segment_label_mode', label: 'Show values in segments'},
 			{name: 'segment_value_align', label: 'Align values in segments'},
 			{name: 'tooltip_mode', label: 'Tooltip mode'},
-			{name: 'tooltip_sort_order', label: 'Tooltip sort order'}
+			{name: 'tooltip_sort_order', label: 'Tooltip sort order'},
+			{name: 'tooltip_max_width', label: 'Tooltip max width (px)'},
+			{name: 'tooltip_max_height', label: 'Tooltip max height (px)'},
+			{name: 'display_unit', label: 'Display unit'},
+			{name: 'display_decimals', label: 'Display decimals (-1 auto)'},
+			{name: 'display_no_value', label: 'Display no value text'}
 		];
 		const entries = [];
 		for (const spec of specs) {
@@ -1260,13 +1265,20 @@
 			const tdControl = document.createElement('td');
 			tdControl.className = 'table-forms-td-right';
 			tdControl.appendChild(controlNode);
-			if (entry.spec.name === 'row_height' || entry.spec.name === 'legend_width') {
-				const rowHeightInput = tdControl.querySelector('input');
-				if (rowHeightInput) {
-					rowHeightInput.maxLength = 4;
-					rowHeightInput.size = 4;
-					rowHeightInput.style.width = '72px';
-					rowHeightInput.style.minWidth = '72px';
+			const compactInputs = new Set([
+				'row_height',
+				'legend_width',
+				'tooltip_max_width',
+				'tooltip_max_height',
+				'display_decimals'
+			]);
+			if (compactInputs.has(entry.spec.name)) {
+				const input = tdControl.querySelector('input');
+				if (input) {
+					input.maxLength = 4;
+					input.size = 4;
+					input.style.width = '72px';
+					input.style.minWidth = '72px';
 				}
 			}
 			tr.appendChild(tdLabel);

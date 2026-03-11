@@ -94,6 +94,13 @@ window.CWidgetTimeState = class extends CWidget {
 		const segmentValueAlign = Math.max(0, Math.min(2, Number(model.segment_value_align ?? 1)));
 		const tooltipMode = Math.max(0, Math.min(2, Number(model.tooltip_mode ?? 0)));
 		const tooltipSortOrder = Math.max(0, Math.min(2, Number(model.tooltip_sort_order ?? 0)));
+		const tooltipMaxWidth = Math.max(180, Math.min(1200, Number(model.tooltip_max_width ?? 360)));
+		const tooltipMaxHeight = Math.max(120, Math.min(900, Number(model.tooltip_max_height ?? 360)));
+		const displayFormat = {
+			unit: String(model.display_unit ?? '').trim(),
+			decimals: Math.max(-1, Math.min(10, Number(model.display_decimals ?? -1))),
+			noValue: String(model.display_no_value ?? 'No value').trim() || 'No value'
+		};
 		const rowGroupMode = Math.max(0, Math.min(2, Number(model.row_group_mode ?? 0)));
 		const rowGroupCollapsed = Number(model.row_group_collapsed ?? 0) === 1;
 
@@ -101,6 +108,9 @@ window.CWidgetTimeState = class extends CWidget {
 		const table = document.createElement('div');
 		table.className = 'timestate__table';
 		const tooltip = this._createTooltip(root);
+		tooltip.style.maxWidth = `${tooltipMaxWidth}px`;
+		tooltip.style.maxHeight = `${tooltipMaxHeight}px`;
+		tooltip.style.overflowY = 'auto';
 
 		const renderedRows = [];
 		for (const row of pageRows) {
@@ -130,8 +140,8 @@ window.CWidgetTimeState = class extends CWidget {
 				const color = String(seg.color || '#607D8B');
 				const rawLabel = String(seg.label || seg.state || 'State');
 				const rawValue = String(seg.raw_value ?? '').trim();
-				const valueText = rawValue !== '' ? rawValue : rawLabel;
-				const displayText = rawLabel !== '' ? rawLabel : valueText;
+				const valueText = this._formatRawValue(rawValue, displayFormat);
+				const displayText = this._buildDisplayText(rawLabel, rawValue, displayFormat);
 				const legendLabel = this._isNumericLabel(rawLabel) ? 'Value' : rawLabel;
 				const duration = Math.max(0, tTo - tFrom);
 
@@ -153,7 +163,8 @@ window.CWidgetTimeState = class extends CWidget {
 						tFrom,
 						tTo,
 						color,
-						rows: pageRows
+						rows: pageRows,
+						format: displayFormat
 					});
 				}
 
@@ -593,7 +604,12 @@ window.CWidgetTimeState = class extends CWidget {
 		}
 
 		if (mode === 1) {
-			const entries = this._collectTooltipEntries(context?.rows, Number(context?.ts || 0), Number(context?.sortOrder || 0));
+			const entries = this._collectTooltipEntries(
+				context?.rows,
+				Number(context?.ts || 0),
+				Number(context?.sortOrder || 0),
+				context?.format || null
+			);
 			if (entries.length > 0) {
 				const rowsHtml = entries.map((entry) => (
 					`<div class="timestate__tooltip-row">`
@@ -610,8 +626,9 @@ window.CWidgetTimeState = class extends CWidget {
 			}
 		}
 
-		const displayText = String(context?.displayText || context?.valueText || '-');
-		const valueText = String(context?.valueText || '-');
+		const noValue = String(context?.format?.noValue || 'No value');
+		const displayText = String(context?.displayText || context?.valueText || noValue);
+		const valueText = String(context?.valueText || noValue);
 		const tFrom = Number(context?.tFrom || 0);
 		const tTo = Number(context?.tTo || 0);
 		let html = `<div><strong>Display:</strong> ${this._escape(displayText)}</div>`;
@@ -623,7 +640,7 @@ window.CWidgetTimeState = class extends CWidget {
 		return html;
 	}
 
-	_collectTooltipEntries(rows, ts, sortOrder) {
+	_collectTooltipEntries(rows, ts, sortOrder, format) {
 		if (!Array.isArray(rows) || !Number.isFinite(ts) || ts <= 0) {
 			return [];
 		}
@@ -641,7 +658,7 @@ window.CWidgetTimeState = class extends CWidget {
 
 				const rawLabel = String(seg?.label || seg?.state || 'State');
 				const rawValue = String(seg?.raw_value ?? '').trim();
-				const displayText = rawLabel !== '' ? rawLabel : rawValue;
+				const displayText = this._buildDisplayText(rawLabel, rawValue, format);
 				out.push({
 					rowLabel,
 					valueText: displayText,
@@ -762,6 +779,55 @@ window.CWidgetTimeState = class extends CWidget {
 
 	_isNumericLabel(text) {
 		return /^-?\d+(?:\.\d+)?$/.test(String(text || '').trim());
+	}
+
+	_formatRawValue(rawValue, format) {
+		const noValue = String(format?.noValue || 'No value');
+		const text = String(rawValue ?? '').trim();
+		if (text === '') {
+			return noValue;
+		}
+		if (!this._isNumericLabel(text)) {
+			return text;
+		}
+
+		const value = Number(text);
+		if (!Number.isFinite(value)) {
+			return text;
+		}
+
+		const decimals = Math.max(-1, Math.min(10, Number(format?.decimals ?? -1)));
+		let out;
+		if (decimals >= 0) {
+			out = value.toLocaleString(undefined, {
+				minimumFractionDigits: decimals,
+				maximumFractionDigits: decimals
+			});
+		}
+		else {
+			out = value.toLocaleString(undefined, {
+				maximumFractionDigits: 6
+			});
+		}
+
+		const unit = String(format?.unit || '').trim();
+		if (unit === '') {
+			return out;
+		}
+		if (unit === '%' || unit.toLowerCase() === 'percent') {
+			return `${out}%`;
+		}
+
+		return `${out} ${unit}`;
+	}
+
+	_buildDisplayText(rawLabel, rawValue, format) {
+		const label = String(rawLabel ?? '').trim();
+		const raw = String(rawValue ?? '').trim();
+		if (label === '' || label === raw || this._isNumericLabel(label)) {
+			return this._formatRawValue(rawValue, format);
+		}
+		return label;
 	}
 
 	_fmtDuration(seconds) {

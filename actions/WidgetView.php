@@ -39,6 +39,20 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$segment_value_align = $this->clampInt((int) ($this->fields_values['segment_value_align'] ?? 1), 0, 2);
 		$tooltip_mode = $this->clampInt((int) ($this->fields_values['tooltip_mode'] ?? 0), 0, 2);
 		$tooltip_sort_order = $this->clampInt((int) ($this->fields_values['tooltip_sort_order'] ?? 0), 0, 2);
+		$tooltip_max_width = $this->clampInt((int) ($this->fields_values['tooltip_max_width'] ?? 360), 180, 1200);
+		$tooltip_max_height = $this->clampInt((int) ($this->fields_values['tooltip_max_height'] ?? 360), 120, 900);
+		$display_unit = trim((string) ($this->fields_values['display_unit'] ?? ''));
+		if (mb_strlen($display_unit) > 16) {
+			$display_unit = mb_substr($display_unit, 0, 16);
+		}
+		$display_decimals = $this->clampInt((int) ($this->fields_values['display_decimals'] ?? -1), -1, 10);
+		$display_no_value = trim((string) ($this->fields_values['display_no_value'] ?? 'No value'));
+		if ($display_no_value === '') {
+			$display_no_value = 'No value';
+		}
+		if (mb_strlen($display_no_value) > 64) {
+			$display_no_value = mb_substr($display_no_value, 0, 64);
+		}
 		$data_sets = $this->parseDataSets(
 			(string) ($this->fields_values['datasets_json'] ?? ''),
 			[
@@ -83,6 +97,11 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'segment_value_align' => $segment_value_align,
 				'tooltip_mode' => $tooltip_mode,
 				'tooltip_sort_order' => $tooltip_sort_order,
+				'tooltip_max_width' => $tooltip_max_width,
+				'tooltip_max_height' => $tooltip_max_height,
+				'display_unit' => $display_unit,
+				'display_decimals' => $display_decimals,
+				'display_no_value' => $display_no_value,
 				'selected_items' => [],
 				'error' => _('Select at least one host.'),
 				'user' => ['debug_mode' => $this->getDebugMode()]
@@ -209,6 +228,11 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'segment_value_align' => $segment_value_align,
 			'tooltip_mode' => $tooltip_mode,
 			'tooltip_sort_order' => $tooltip_sort_order,
+			'tooltip_max_width' => $tooltip_max_width,
+			'tooltip_max_height' => $tooltip_max_height,
+			'display_unit' => $display_unit,
+			'display_decimals' => $display_decimals,
+			'display_no_value' => $display_no_value,
 			'error' => null,
 			'user' => ['debug_mode' => $this->getDebugMode()]
 		]));

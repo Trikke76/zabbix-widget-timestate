@@ -28,6 +28,11 @@ $payload = [
 	'segment_value_align' => (int) ($data['segment_value_align'] ?? 1),
 	'tooltip_mode' => (int) ($data['tooltip_mode'] ?? 0),
 	'tooltip_sort_order' => (int) ($data['tooltip_sort_order'] ?? 0),
+	'tooltip_max_width' => (int) ($data['tooltip_max_width'] ?? 360),
+	'tooltip_max_height' => (int) ($data['tooltip_max_height'] ?? 360),
+	'display_unit' => (string) ($data['display_unit'] ?? ''),
+	'display_decimals' => (int) ($data['display_decimals'] ?? -1),
+	'display_no_value' => (string) ($data['display_no_value'] ?? 'No value'),
 	'error' => $data['error'] ?? null
 ];
 
