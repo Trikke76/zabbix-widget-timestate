@@ -57,8 +57,10 @@ window.CWidgetTimeState = class extends CWidget {
 		const rowHeight = Math.max(16, Math.min(120, Number(model.row_height ?? 40)));
 		const lineWidth = Math.max(0, Math.min(3, Number(model.line_width ?? 0)));
 		const fillOpacity = Math.max(0, Math.min(100, Number(model.fill_opacity ?? 100))) / 100;
+		const panelTransparent = Number(model.panel_transparent ?? 0) === 1;
 		root.style.setProperty('--ts-row-height', `${rowHeight}px`);
 		root.style.setProperty('--ts-segment-line-width', `${lineWidth}px`);
+		root.classList.toggle('is-panel-transparent', panelTransparent);
 
 		const totalRows = rows.length;
 		const totalPages = pageSize > 0 ? Math.max(1, Math.ceil(totalRows / pageSize)) : 1;
@@ -79,6 +81,8 @@ window.CWidgetTimeState = class extends CWidget {
 		const legendMode = Math.max(0, Math.min(2, Number(model.legend_mode ?? 0)));
 		const legendShowCount = Number(model.legend_show_count ?? 1) === 1;
 		const legendShowDuration = Number(model.legend_show_duration ?? 1) === 1;
+		const legendPlacement = Math.max(0, Math.min(1, Number(model.legend_placement ?? 0)));
+		const legendWidth = Math.max(140, Math.min(600, Number(model.legend_width ?? 260)));
 		const segmentLabelMode = Math.max(0, Math.min(2, Number(model.segment_label_mode ?? 0)));
 		const segmentValueAlign = Math.max(0, Math.min(2, Number(model.segment_value_align ?? 1)));
 		const tooltipMode = Math.max(0, Math.min(2, Number(model.tooltip_mode ?? 0)));
@@ -221,20 +225,39 @@ window.CWidgetTimeState = class extends CWidget {
 		const axis = this._buildAxisTicks(ticks, timeFrom, range, axisLabelDensity);
 		axisRow.appendChild(axisLabel);
 		axisRow.appendChild(axis);
-		root.appendChild(axisRow);
-		root.appendChild(table);
-		if (totalPages > 1) {
-			root.appendChild(this._renderPager(this._page, totalPages, totalRows, pageSize));
-		}
+		const contentWrap = document.createElement('div');
+		contentWrap.className = 'timestate__content';
+		contentWrap.appendChild(axisRow);
+		contentWrap.appendChild(table);
 
+		let legendEl = null;
 		if (legendMode !== 2 && legend.size > 0) {
 			const legendEntries = Array.from(legend.values());
 			if (legendMode === 1) {
-				root.appendChild(this._renderLegendTable(legendEntries, legendShowCount, legendShowDuration));
+				legendEl = this._renderLegendTable(legendEntries, legendShowCount, legendShowDuration);
 			}
 			else if (legendEntries.length <= 40) {
-				root.appendChild(this._renderLegendList(legendEntries, legendShowCount, legendShowDuration));
+				legendEl = this._renderLegendList(legendEntries, legendShowCount, legendShowDuration);
 			}
+		}
+
+		if (legendEl && legendPlacement === 1) {
+			const mainWrap = document.createElement('div');
+			mainWrap.className = 'timestate__main timestate__main--legend-right';
+			mainWrap.style.setProperty('--ts-legend-width', `${legendWidth}px`);
+			legendEl.classList.add('is-right');
+			mainWrap.appendChild(contentWrap);
+			mainWrap.appendChild(legendEl);
+			root.appendChild(mainWrap);
+		}
+		else {
+			root.appendChild(contentWrap);
+			if (legendEl) {
+				root.appendChild(legendEl);
+			}
+		}
+		if (totalPages > 1) {
+			root.appendChild(this._renderPager(this._page, totalPages, totalRows, pageSize));
 		}
 	}
 

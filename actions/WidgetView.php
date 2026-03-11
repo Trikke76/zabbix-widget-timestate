@@ -24,6 +24,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$row_height = $this->clampInt((int) ($this->fields_values['row_height'] ?? 40), 16, 120);
 		$line_width = $this->clampInt((int) ($this->fields_values['line_width'] ?? 0), 0, 3);
 		$fill_opacity = $this->clampInt((int) ($this->fields_values['fill_opacity'] ?? 100), 0, 100);
+		$panel_transparent = ((int) ($this->fields_values['panel_transparent'] ?? 0)) === 1 ? 1 : 0;
 		$row_group_mode = $this->clampInt((int) ($this->fields_values['row_group_mode'] ?? self::DEFAULT_ROW_GROUP_MODE), 0, 2);
 		$row_group_collapsed = ((int) ($this->fields_values['row_group_collapsed'] ?? 0)) === 1 ? 1 : 0;
 		$axis_tick_step = $this->clampInt((int) ($this->fields_values['axis_tick_step'] ?? 0), 0, 86400);
@@ -32,6 +33,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 		$legend_mode = $this->clampInt((int) ($this->fields_values['legend_mode'] ?? self::DEFAULT_LEGEND_MODE), 0, 2);
 		$legend_show_count = ((int) ($this->fields_values['legend_show_count'] ?? 1)) === 1 ? 1 : 0;
 		$legend_show_duration = ((int) ($this->fields_values['legend_show_duration'] ?? 1)) === 1 ? 1 : 0;
+		$legend_placement = $this->clampInt((int) ($this->fields_values['legend_placement'] ?? 0), 0, 1);
+		$legend_width = $this->clampInt((int) ($this->fields_values['legend_width'] ?? 260), 140, 600);
 		$segment_label_mode = $this->clampInt((int) ($this->fields_values['segment_label_mode'] ?? 0), 0, 2);
 		$segment_value_align = $this->clampInt((int) ($this->fields_values['segment_value_align'] ?? 1), 0, 2);
 		$tooltip_mode = $this->clampInt((int) ($this->fields_values['tooltip_mode'] ?? 0), 0, 2);
@@ -66,6 +69,7 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'row_height' => $row_height,
 				'line_width' => $line_width,
 				'fill_opacity' => $fill_opacity,
+				'panel_transparent' => $panel_transparent,
 				'row_group_mode' => $row_group_mode,
 				'row_group_collapsed' => $row_group_collapsed,
 				'axis_tick_step' => $axis_tick_step,
@@ -73,6 +77,8 @@ class WidgetView extends CControllerDashboardWidgetView {
 				'axis_grid_mode' => $axis_grid_mode,
 				'legend_show_count' => $legend_show_count,
 				'legend_show_duration' => $legend_show_duration,
+				'legend_placement' => $legend_placement,
+				'legend_width' => $legend_width,
 				'segment_label_mode' => $segment_label_mode,
 				'segment_value_align' => $segment_value_align,
 				'tooltip_mode' => $tooltip_mode,
@@ -190,12 +196,15 @@ class WidgetView extends CControllerDashboardWidgetView {
 			'row_height' => $row_height,
 			'line_width' => $line_width,
 			'fill_opacity' => $fill_opacity,
+			'panel_transparent' => $panel_transparent,
 			'axis_tick_step' => $axis_tick_step,
 			'axis_label_density' => $axis_label_density,
 			'axis_grid_mode' => $axis_grid_mode,
 			'legend_mode' => $legend_mode,
 			'legend_show_count' => $legend_show_count,
 			'legend_show_duration' => $legend_show_duration,
+			'legend_placement' => $legend_placement,
+			'legend_width' => $legend_width,
 			'segment_label_mode' => $segment_label_mode,
 			'segment_value_align' => $segment_value_align,
 			'tooltip_mode' => $tooltip_mode,

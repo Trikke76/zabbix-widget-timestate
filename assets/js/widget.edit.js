@@ -1175,6 +1175,7 @@
 			{name: 'row_height', label: 'Row height (px)'},
 			{name: 'line_width', label: 'Line width'},
 			{name: 'fill_opacity', label: 'Fill opacity'},
+			{name: 'panel_transparent', label: 'Transparent panel'},
 			{name: 'row_group_mode', label: 'Row grouping'},
 			{name: 'row_group_collapsed', label: 'Groups collapsed by default'},
 			{name: 'axis_tick_step', label: 'Time axis: tick interval'},
@@ -1183,6 +1184,8 @@
 			{name: 'legend_mode', label: 'Legend mode'},
 			{name: 'legend_show_count', label: 'Legend: show count'},
 			{name: 'legend_show_duration', label: 'Legend: show total duration'},
+			{name: 'legend_placement', label: 'Legend placement'},
+			{name: 'legend_width', label: 'Legend width (px)'},
 			{name: 'segment_label_mode', label: 'Show values in segments'},
 			{name: 'segment_value_align', label: 'Align values in segments'},
 			{name: 'tooltip_mode', label: 'Tooltip mode'},
@@ -1257,7 +1260,7 @@
 			const tdControl = document.createElement('td');
 			tdControl.className = 'table-forms-td-right';
 			tdControl.appendChild(controlNode);
-			if (entry.spec.name === 'row_height') {
+			if (entry.spec.name === 'row_height' || entry.spec.name === 'legend_width') {
 				const rowHeightInput = tdControl.querySelector('input');
 				if (rowHeightInput) {
 					rowHeightInput.maxLength = 4;

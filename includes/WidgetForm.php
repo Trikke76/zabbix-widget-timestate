@@ -103,6 +103,12 @@ class WidgetForm extends CWidgetForm {
 				]))->setDefault(100)
 			)
 			->addField(
+				(new CWidgetFieldSelect('panel_transparent', _('Transparent panel'), [
+					0 => _('No'),
+					1 => _('Yes')
+				]))->setDefault(0)
+			)
+			->addField(
 				(new CWidgetFieldSelect('row_group_mode', _('Row grouping'), [
 					0 => _('None'),
 					1 => _('Host'),
@@ -162,6 +168,16 @@ class WidgetForm extends CWidgetForm {
 					1 => _('Yes'),
 					0 => _('No')
 				]))->setDefault(1)
+			)
+			->addField(
+				(new CWidgetFieldSelect('legend_placement', _('Legend placement'), [
+					0 => _('Bottom'),
+					1 => _('Right')
+				]))->setDefault(0)
+			)
+			->addField(
+				(new CWidgetFieldTextBox('legend_width', _('Legend width (px)')))
+					->setDefault('260')
 			)
 			->addField(
 				(new CWidgetFieldSelect('segment_label_mode', _('Show values in segments'), [
